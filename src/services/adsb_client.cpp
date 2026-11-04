@@ -533,19 +533,23 @@ bool fetchEnrichment(const Aircraft& plane, EnrichmentCacheEntry* entry) {
   entry->type[0] = '\0';
   entry->airline[0] = '\0';
 
-  JsonDocument doc;
-  bool not_found = false;
-  if (!fetchFlightDataJson(enrichmentUrl(plane), plane.callsign, &doc,
-                           &not_found)) {
-    return false;
-  }
+  {
+    // Scoped: the parsed reply (a few KB) is freed before a second request
+    // below, which would otherwise hold it through a whole TLS session.
+    JsonDocument doc;
+    bool not_found = false;
+    if (!fetchFlightDataJson(enrichmentUrl(plane), plane.callsign, &doc,
+                             &not_found)) {
+      return false;
+    }
 
-  if (!not_found) {
-    JsonObject response = doc["response"].as<JsonObject>();
-    if (!response.isNull()) {
-      parseRoute(response, entry->route, sizeof(entry->route));
-      parseDetailedType(response, entry->type, sizeof(entry->type));
-      parseAirline(response, entry->airline, sizeof(entry->airline));
+    if (!not_found) {
+      JsonObject response = doc["response"].as<JsonObject>();
+      if (!response.isNull()) {
+        parseRoute(response, entry->route, sizeof(entry->route));
+        parseDetailedType(response, entry->type, sizeof(entry->type));
+        parseAirline(response, entry->airline, sizeof(entry->airline));
+      }
     }
   }
 

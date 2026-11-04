@@ -34,7 +34,7 @@ RESET_REASON_RE = re.compile(r"Reset reason: (\d+)")
 TROUBLE_RE = re.compile(
     r"Guru Meditation|assert failed|abort\(\)|panic|Backtrace:|"
     r"Stack canary|LoadProhibited|StoreProhibited|Self-recovery restart|"
-    r"WiFi lost",
+    r"WiFi lost|frame alloc failed",
     re.IGNORECASE,
 )
 # Matches config::kMinLargestFreeBlockBytes: below this the firmware restarts.

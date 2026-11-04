@@ -1,5 +1,6 @@
 #include "ui/radar_display.h"
 
+#include <esp_heap_caps.h>
 #include <lgfx/v1/lgfx_fonts.hpp>
 
 #include <algorithm>
@@ -904,16 +905,23 @@ void drawStaticGrid(Gfx& gfx) {
   gfx.setTextDatum(textdatum_t::top_left);
 }
 
+unsigned long s_frame_alloc_failures = 0;
+
 bool ensureFrameSprite() {
   if (s_frame_ready) {
     return true;
   }
-  // 8-bit (RGB332) frame: 57.6 KB instead of 115 KB at 16-bit. Each HTTPS
-  // request needs ~62 KB, and at 16-bit free heap fell to ~15 KB during
-  // every request. Colours are converted when drawn and when pushed.
+  // 8-bit (RGB332) frame: 57.6 KB instead of 115 KB at 16-bit. Colours are
+  // converted when drawn and when pushed.
   s_frame.setColorDepth(8);
   if (!s_frame.createSprite(radar::kSize, radar::kSize)) {
-    Serial.println("radar: frame sprite alloc failed");
+    // The frame is allocated per redraw (see renderFrame), so this means the
+    // heap is fragmented. The fallback draws straight to the panel.
+    ++s_frame_alloc_failures;
+    Serial.printf("radar: frame alloc failed (%lu so far), largest block %u\n",
+                  s_frame_alloc_failures,
+                  static_cast<unsigned>(heap_caps_get_largest_free_block(
+                      MALLOC_CAP_8BIT)));
     return false;
   }
   s_frame_ready = true;
@@ -933,6 +941,13 @@ void renderFrame() {
   }
   s_frame.pushSprite(0, 0);
   tft.setTextDatum(textdatum_t::top_left);
+  // The panel keeps the image, so the buffer is only needed while drawing.
+  // Redraws happen only in loop(), never during an HTTPS request, so freeing
+  // it here hands its 57.6 KB to each request (one costs 57-66 KB, and the
+  // heap low point was ~20 KB with the frame kept, ~12 KB while the
+  // airports downloaded).
+  s_frame.deleteSprite();
+  s_frame_ready = false;
 }
 
 }  // namespace
