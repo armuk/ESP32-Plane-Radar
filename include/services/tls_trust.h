@@ -4,13 +4,16 @@
 
 /**
  * HTTPS certificate policy, chosen at build time with PLANE_RADAR_TLS_VERIFY:
- *   0 (default)  no certificate check (setInsecure)
- *   1            check against ESP-IDF's built-in root CA bundle
+ *   0            no certificate check (setInsecure)
+ *   1 (default)  check against ESP-IDF's built-in root CA bundle (needs the
+ *                v2.1.0 partition layout: the bundle adds ~69 KB of flash)
  *   2            measurement: alternate checked / unchecked per host and log
  *                each request's heap low point ("tls-ab:" lines)
+ * Certificate dates are not checked (MBEDTLS_HAVE_TIME_DATE is off in the
+ * core), so checking does not depend on the clock being set at boot.
  */
 #ifndef PLANE_RADAR_TLS_VERIFY
-#define PLANE_RADAR_TLS_VERIFY 0
+#define PLANE_RADAR_TLS_VERIFY 1
 #endif
 
 namespace services::tls {

@@ -241,6 +241,18 @@ void handleUploadChunk() {
           "JavaScript enabled.";
       return;
     }
+    // A partition table cannot change over the air. An image built for
+    // larger app slots (e.g. v2.1.0's layout on a v2.0.x device) does not
+    // fit; say how to move to the new layout instead of "Not enough space".
+    const esp_partition_t* target = esp_ota_get_next_update_partition(nullptr);
+    if (target != nullptr && static_cast<size_t>(size) > target->size) {
+      s_upload_error =
+          "Refused: this image (" + String(size) + " bytes) is larger than "
+          "this device's update slot (" + String(target->size) +
+          " bytes). It needs the newer partition layout: flash the -full.bin "
+          "over USB once (see the README, \"Partition layout\").";
+      return;
+    }
 
     statusScreenFirmwareUpdate();
     security::logEvent("update started from %s (%ld bytes)",

@@ -66,9 +66,9 @@ Key events are also kept in flash, so they survive power cuts: updates installed
 
 ### Outbound connections
 
-All data services are fetched over HTTPS. **Server certificates are not checked yet** (see [Known limitations](#known-limitations)), so someone who can tamper with your network traffic could feed the radar false aircraft or weather data. They could not use this to change settings or firmware.
+All data services are fetched over HTTPS, and since v2.1.0 **server certificates are checked** against ESP-IDF's built-in root certificate bundle (Mozilla's list, updated with each core release). A refused certificate, which can mean someone is intercepting the connection, is logged on the Security page once per host per boot. The device then has no data from that service; nothing else changes. Certificate expiry dates are not checked (see [Known limitations](#known-limitations)).
 
-**Update check.** Release builds ask GitHub once a day (`api.github.com/repos/<repo>/releases/latest`) whether a newer release exists. `<repo>` is the repository that built the firmware. The request sends the device's IP address, as any web request does, and a User-Agent of `PlaneRadar/<version>`. Only the release tag and the link to its page are read. Nothing is downloaded or installed automatically. Because certificates are not checked, someone on the network path could fake the notice. They still could not install anything, because updates must be signed. Builds without a release repository never make this request.
+**Update check.** Release builds ask GitHub once a day (`api.github.com/repos/<repo>/releases/latest`) whether a newer release exists. `<repo>` is the repository that built the firmware. The request sends the device's IP address, as any web request does, and a User-Agent of `PlaneRadar/<version>`. Only the release tag and the link to its page are read. Nothing is downloaded or installed automatically. Even if the notice were faked, nothing could be installed, because updates must be signed. Builds without a release repository never make this request.
 
 ## Interfaces
 
@@ -82,7 +82,7 @@ All data services are fetched over HTTPS. **Server certificates are not checked 
 | mDNS (`<name>.local`, UDP 5353) | Both | Announces the web interface. |
 | DHCP, DNS | Outbound | Standard; trusts the network. |
 | NTP (UDP 123) | Outbound | `pool.ntp.org` (configurable) and `time.nist.gov`. Not authenticated; only sets the clock. |
-| adsb.fi, ADSBDB, Open-Meteo, GitHub Pages (airport data), GitHub API (update check, daily) | Outbound HTTPS | TLS without certificate checking (see below). |
+| adsb.fi, ADSBDB, Open-Meteo, GitHub Pages (airport data), GitHub API (update check, daily) | Outbound HTTPS | TLS with certificate checking against the built-in root bundle (expiry dates not checked). |
 | Local receiver (optional) | Outbound HTTP | A `tar1090`/`readsb` `aircraft.json` URL on your network that you configure. |
 
 ### Web endpoints
@@ -154,6 +154,7 @@ python ~/.platformio/packages/framework-arduinoespressif32/tools/bin_signing.py 
 These are deliberate, given the hardware (ESP32-C3, 4 MB flash, about 90 KB free heap) and how the device is used:
 
 - **No TLS on the web interface.** A certificate for a `.local` name on a home network can't be trusted by browsers without manual steps, and a TLS server would need about 30–40 KB of heap. Mitigations: Digest login, login backoff, signed updates.
-- **HTTPS certificates are not checked yet.** Checking them was measured on the device: about 1.4 KB more heap at the worst point and about 1 s longer per new connection. It does fit in memory. It needs the 69 KB root certificate bundle in flash, though, and with update signing added the firmware no longer fits its 1.75 MB slot with room to spare. Making room means changing the partition table, which needs one USB flash per device.
+- **HTTPS certificate expiry dates are not checked.** The core is built without `MBEDTLS_HAVE_TIME_DATE`, so a certificate is accepted if it chains to a trusted root, even when expired or not yet valid. This also means checking works before the clock is set at boot. An attacker would need a certificate for the host signed by a trusted root.
+- **Root certificates change only with firmware updates.** The bundle is built into the firmware; a root removed from Mozilla's list stays trusted until the next release with a newer core.
 - **No secure boot or flash encryption.** The ESP32-C3 supports both, but they are one-way eFuse settings: a mistake permanently bricks the board, and USB recovery is no longer possible. Someone with physical access can therefore read the Wi‑Fi password from flash, or flash other firmware. Owners who need this can enable it themselves with ESP-IDF's tools.
 - **Signature checks apply to over-the-air updates only.** USB flashing is not checked; it is the recovery path.

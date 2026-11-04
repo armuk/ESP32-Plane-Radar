@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <cstring>
 
+#include "services/security.h"
+
 
 namespace services::tls {
 namespace {
@@ -71,6 +73,28 @@ Session::Session(WiFiClientSecure& client, const char* tag)
 }
 
 Session::~Session() {
+#if PLANE_RADAR_TLS_VERIFY == 1
+  // A refused certificate can mean someone is intercepting the connection:
+  // put it in the security log, once per host per boot (no flash writes).
+  if (verify_ && code_ < 0) {
+    char err[80] = "";
+    client_.lastError(err, sizeof(err));
+    if (strstr(err, "X509") != nullptr || strstr(err, "erif") != nullptr) {
+      static const char* s_logged[8] = {};
+      for (const char*& t : s_logged) {
+        if (t == tag_) {
+          break;
+        }
+        if (t == nullptr) {
+          t = tag_;
+          services::security::logEvent("certificate refused for %s: %.40s",
+                                       tag_, err);
+          break;
+        }
+      }
+    }
+  }
+#endif
 #if PLANE_RADAR_TLS_VERIFY == 2
   if (!measuring_) {
     return;

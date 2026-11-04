@@ -331,7 +331,7 @@ Put the board in download mode (hold **BOOT**, tap **RESET**), then flash with C
 
 ### OTA firmware updates
 
-The firmware uses two 1.75 MB application slots. After the OTA-capable partition table is installed, updates can be uploaded without USB:
+The firmware uses two 1.875 MB application slots (see [Partition layout](#partition-layout)). Updates can be uploaded without USB:
 
 1. Open `http://plane-radar.local`
 2. Choose **Firmware update**
@@ -343,7 +343,22 @@ The firmware uses two 1.75 MB application slots. After the OTA-capable partition
 
 Devices upgraded from firmware that used the old shared default password `plane-radar` switch to a random password and show it on the screen once.
 
-> **One-time migration:** firmware built with the old single-app partition cannot install this new partition table through app-only OTA. Flash the new **`-full.bin`**/merged image over USB once. Every later update can use the OTA image.
+### Partition layout
+
+| Partition | Offset | Size | Holds |
+|-----------|--------|------|-------|
+| `nvs` | `0x9000` | 20 KB | Settings, Wi‑Fi, kept security events |
+| `otadata` | `0xE000` | 8 KB | Which app slot to boot |
+| `app0`, `app1` | `0x10000`, `0x1F0000` | 1.875 MB each | Running firmware and the update slot |
+| `spiffs` (LittleFS) | `0x3D0000` | 128 KB | Downloaded airports (a few KB) |
+| `coredump` | `0x3F0000` | 64 KB | Last crash dump |
+
+**Upgrading from v2.0.x needs one USB flash.** v2.1.0 grew each app slot by 128 KB (and shrank the file store from 384 KB) so that HTTPS certificate checking fits. A partition table can't be changed over the air: a v2.0.x device refuses the v2.1.0 `-ota.bin` because it is larger than its update slot, and says so. Pick one:
+
+- **From a source checkout (keeps everything):** `pio run -e supermini -t upload`. This writes the bootloader, the partition table and the app, and leaves the settings area alone, so Wi‑Fi, settings and the password are kept. The airports are downloaded again on first start.
+- **With a web flasher and the release's `-full.bin` (erases settings):** the image covers the settings area, so Wi‑Fi, settings and the settings password are erased. First save your settings on **Status → Backup & restore**. After flashing, join the `PlaneRadar-Setup` hotspot, set up Wi‑Fi, log in with the new password shown on the screen, and restore the backup.
+
+After that, every update is an `-ota.bin` upload again.
 
 **Automatic rollback:** a newly installed firmware is only kept once it has fetched aircraft data successfully. If it resets before then, for example from a crash, a watchdog, a self-recovery restart or a power cut, the bootloader goes back to the previous firmware. The About page then says which update was rolled back. A Wi‑Fi or adsb.fi outage lasting through the 10-minute no-data restart straight after an update also rolls back; upload it again once the network is back. Firmware flashed over USB is never rolled back.
 
