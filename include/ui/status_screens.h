@@ -1,6 +1,9 @@
 #pragma once
 
-void statusScreenPortal();
+/** Setup hotspot instructions, with its WPA2 password. */
+void statusScreenPortal(const char* ap_password);
+/** A newly generated settings password, until BOOT is tapped. */
+void statusScreenSettingsPassword(const char* password);
 void statusScreenConnectFailed();
 void statusScreenWifiReset();
 void statusScreenFirmwareUpdate();

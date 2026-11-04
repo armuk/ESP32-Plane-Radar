@@ -13,6 +13,8 @@ namespace ui::radar {
  *  10 km  — default; neighborhood spotting
  *  15 km  — wider local area
  *  25 km  — metro / regional picture
+ *  50, 75, 100 km — wide area. The 64 nearest aircraft are kept, so a busy
+ *                   sky at these ranges shows only the closest traffic.
  *
  * Outer radius (for aircraft math) is ring-3 distance ÷ 0.75.
  */
@@ -29,7 +31,13 @@ constexpr RangePreset kRangePresets[] = {
     {10.0f, 10.0f * kRing3ToOuterKm},
     {15.0f, 15.0f * kRing3ToOuterKm},
     {25.0f, 25.0f * kRing3ToOuterKm},
+    {50.0f, 50.0f * kRing3ToOuterKm},
+    {75.0f, 75.0f * kRing3ToOuterKm},
+    {100.0f, 100.0f * kRing3ToOuterKm},
 };
+// The Setup dropdown and saveRangeFromPortal() use one digit per index.
+static_assert(sizeof(kRangePresets) / sizeof(kRangePresets[0]) <= 10,
+              "range index must stay a single digit");
 
 constexpr size_t kRangePresetCount =
     sizeof(kRangePresets) / sizeof(kRangePresets[0]);
@@ -38,6 +46,11 @@ constexpr size_t kRangePresetCount =
 void rangeInit();
 /** Cycle preset and save to flash. */
 void rangeNext();
+/**
+ * Set the preset from the portal's range dropdown (index as text, "0".."6").
+ * Invalid values are ignored. Returns true when the range changed.
+ */
+bool saveRangeFromPortal(const char* index_value);
 const RangePreset& rangeCurrent();
 uint8_t rangeIndex();
 /** ADSB fetch radius (km): scaled to screen edge so beyond-ring dots have data. */

@@ -80,6 +80,21 @@ constexpr uint8_t kGridB = 32;
 constexpr uint8_t kAircraftR = 255;
 constexpr uint8_t kAircraftG = 0;
 constexpr uint8_t kAircraftB = 0;
+/** Light aircraft (A1, gliders, ultralights): yellow, drawn smaller. */
+constexpr uint8_t kLightAircraftR = 255;
+constexpr uint8_t kLightAircraftG = 220;
+constexpr uint8_t kLightAircraftB = 0;
+constexpr float kLightAircraftScale = 0.65f;
+/** Military aircraft (adsb.fi dbFlags): bright green. */
+constexpr uint8_t kMilitaryAircraftR = 60;
+constexpr uint8_t kMilitaryAircraftG = 255;
+constexpr uint8_t kMilitaryAircraftB = 60;
+/** Tag line for the airline name. */
+constexpr uint8_t kTagAirlineR = 190;
+constexpr uint8_t kTagAirlineG = 190;
+constexpr uint8_t kTagAirlineB = 190;
+/** Compass letters sit this far inside the screen edge when rotated (px). */
+constexpr int kCardinalRotatedInsetPx = 9;
 constexpr uint8_t kTrackR = 255;
 constexpr uint8_t kTrackG = 0;
 constexpr uint8_t kTrackB = 255;
@@ -96,6 +111,10 @@ constexpr uint8_t kRunwayB = 170;
 constexpr uint8_t kRunwayLabelR = 110;
 constexpr uint8_t kRunwayLabelG = 210;
 constexpr uint8_t kRunwayLabelB = 230;
+/** Downloaded medium airports: same teal, thinner lines. */
+constexpr float kMediumRunwayHalfWidth = 0.75f;
+/** Dot for a downloaded airport with no runway data (px). */
+constexpr int kAirportDotRadiusPx = 2;
 constexpr uint8_t kFooterBgR = 3;
 constexpr uint8_t kFooterBgG = 16;
 constexpr uint8_t kFooterBgB = 32;
@@ -105,6 +124,9 @@ extern uint16_t kColorGrid;
 extern uint16_t kColorLabel;
 extern uint16_t kColorCenter;
 extern uint16_t kColorAircraft;
+extern uint16_t kColorLightAircraft;
+extern uint16_t kColorMilitaryAircraft;
+extern uint16_t kColorTagAirline;
 extern uint16_t kColorTrackVector;
 extern uint16_t kColorTagType;
 extern uint16_t kColorTagAltitude;

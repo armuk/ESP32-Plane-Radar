@@ -1,6 +1,7 @@
 #include "services/radar_location.h"
 
 #include <Preferences.h>
+#include <cmath>
 #include <cstdlib>
 #include <cstring>
 
@@ -17,16 +18,32 @@ constexpr char kKeyLon[] = "lon";
 double s_lat = config::kDefaultRadarLat;
 double s_lon = config::kDefaultRadarLon;
 
+/**
+ * Whole decimal number, surrounding spaces allowed, rounded to 6 decimals
+ * (~0.1 m) so a value copied from a map with 15 decimals is accepted.
+ */
 bool parseCoord(const char* text, double* out) {
-  if (text == nullptr || text[0] == '\0') {
+  if (text == nullptr) {
+    return false;
+  }
+  while (*text == ' ' || *text == '\t') {
+    ++text;
+  }
+  if (*text == '\0') {
     return false;
   }
   char* end = nullptr;
   const double v = strtod(text, &end);
-  if (end == text || (end != nullptr && *end != '\0')) {
+  if (end == text) {
     return false;
   }
-  *out = v;
+  while (*end == ' ' || *end == '\t') {
+    ++end;
+  }
+  if (*end != '\0' || !std::isfinite(v)) {
+    return false;
+  }
+  *out = std::round(v * 1e6) / 1e6;
   return true;
 }
 
@@ -50,11 +67,13 @@ void init() {
   Preferences prefs;
   prefs.begin(kPrefsNamespace, true);
   if (prefs.isKey(kKeyLat) && prefs.isKey(kKeyLon)) {
-    const double lat = prefs.getDouble(kKeyLat, config::kDefaultRadarLat);
-    const double lon = prefs.getDouble(kKeyLon, config::kDefaultRadarLon);
-    if (validLatLon(lat, lon)) {
-      s_lat = lat;
-      s_lon = lon;
+    const double stored_lat =
+        prefs.getDouble(kKeyLat, config::kDefaultRadarLat);
+    const double stored_lon =
+        prefs.getDouble(kKeyLon, config::kDefaultRadarLon);
+    if (validLatLon(stored_lat, stored_lon)) {
+      s_lat = stored_lat;
+      s_lon = stored_lon;
     }
   }
   prefs.end();
@@ -65,16 +84,16 @@ double lat() { return s_lat; }
 double lon() { return s_lon; }
 
 bool saveFromStrings(const char* lat_str, const char* lon_str) {
-  double lat = 0.0;
-  double lon = 0.0;
-  if (!parseCoord(lat_str, &lat) || !parseCoord(lon_str, &lon)) {
+  double new_lat = 0.0;
+  double new_lon = 0.0;
+  if (!parseCoord(lat_str, &new_lat) || !parseCoord(lon_str, &new_lon)) {
     return false;
   }
-  if (!validLatLon(lat, lon)) {
+  if (!validLatLon(new_lat, new_lon)) {
     return false;
   }
-  persist(lat, lon);
-  Serial.printf("Radar location saved: %.6f, %.6f\n", lat, lon);
+  persist(new_lat, new_lon);
+  Serial.printf("Radar location saved: %.6f, %.6f\n", new_lat, new_lon);
   return true;
 }
 

@@ -15,6 +15,8 @@ bool s_vlw_loaded = false;
 const uint8_t* vlwData() { return _binary_data_ui_font_vlw_start; }
 
 size_t vlwDataLen() {
+  // Linker-defined start/end of one embedded blob, not separate objects.
+  // cppcheck-suppress comparePointers
   return static_cast<size_t>(_binary_data_ui_font_vlw_end -
                                _binary_data_ui_font_vlw_start);
 }

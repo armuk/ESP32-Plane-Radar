@@ -10,6 +10,7 @@
 #include "config.h"
 #include "hardware/display.h"
 #include "hardware/display_font.h"
+#include "services/display_settings.h"
 
 namespace lgfx_fonts = lgfx::v1::fonts;
 
@@ -32,7 +33,7 @@ struct SpinnerDot {
 };
 
 char s_connecting_ssid[33];
-char s_ssid_line[33];
+char s_ssid_line[33 + 3];  // 32-byte SSID + "..."
 constexpr int kConnectingTextMaxWidthPx = 220;
 float s_spinner_angle_deg = -90.0f;
 SpinnerDot s_spinner_dots[kSpinnerDotCount];
@@ -108,7 +109,11 @@ void applyConnectingDetailStyle() {
   }
 }
 
-/** SSID on one line; truncate with … if wider than kConnectingTextMaxWidthPx. */
+/**
+ * SSID on one line; truncate with "..." if wider than
+ * kConnectingTextMaxWidthPx. ASCII dots because the UI fonts have no "…"
+ * glyph; cuts only at UTF-8 character boundaries.
+ */
 void fitSsidLine() {
   strncpy(s_ssid_line, s_connecting_ssid, sizeof(s_ssid_line) - 1);
   s_ssid_line[sizeof(s_ssid_line) - 1] = '\0';
@@ -118,13 +123,17 @@ void fitSsidLine() {
   }
   const size_t len = strlen(s_connecting_ssid);
   for (size_t n = len; n > 0; --n) {
-    snprintf(s_ssid_line, sizeof(s_ssid_line), "%.*s…", static_cast<int>(n),
+    // Don't split a multi-byte character: skip UTF-8 continuation bytes.
+    if ((static_cast<unsigned char>(s_connecting_ssid[n]) & 0xC0) == 0x80) {
+      continue;
+    }
+    snprintf(s_ssid_line, sizeof(s_ssid_line), "%.*s...", static_cast<int>(n),
              s_connecting_ssid);
     if (tft.textWidth(s_ssid_line) <= kConnectingTextMaxWidthPx) {
       return;
     }
   }
-  strncpy(s_ssid_line, "…", sizeof(s_ssid_line) - 1);
+  strncpy(s_ssid_line, "...", sizeof(s_ssid_line) - 1);
   s_ssid_line[sizeof(s_ssid_line) - 1] = '\0';
 }
 
@@ -208,14 +217,34 @@ void statusScreenConnectingTick() {
   drawSpinnerDots();
 }
 
-void statusScreenPortal() {
+void statusScreenPortal(const char* ap_password) {
+  char host_url[services::settings::kDeviceNameMaxLen + 7];
+  snprintf(host_url, sizeof(host_url), "%s.local",
+           services::settings::deviceName());
+  char password_line[24];
+  snprintf(password_line, sizeof(password_line), "Password %s",
+           ap_password != nullptr ? ap_password : "");
+  // Same six rows as before; the password replaces the "Open in browser"
+  // label (the address below says what to open).
   const TextLine lines[] = {
       {"Wi-Fi setup", 1.15f, &kPortalGfxTitle},
       {"1. Join network:", 1.05f, &kPortalGfxBody},
       {config::kPortalApName, 1.12f, &kPortalGfxEmphasis},
-      {"2. Open in browser:", 1.05f, &kPortalGfxBody},
-      {config::kPortalHostUrl, 1.12f, &kPortalGfxEmphasis},
+      {password_line, 1.05f, &kPortalGfxBody},
+      {host_url, 1.12f, &kPortalGfxEmphasis},
       {"or 192.168.4.1", 1.0f, &kPortalGfxBody},
+  };
+  drawTextBlock(config::kColorYellow, config::kTextOnYellow, lines,
+                sizeof(lines) / sizeof(lines[0]));
+}
+
+void statusScreenSettingsPassword(const char* password) {
+  const TextLine lines[] = {
+      {"Settings login", 1.12f, &kPortalGfxTitle},
+      {"user admin", 1.05f, &kPortalGfxBody},
+      {password, 1.12f, &kPortalGfxEmphasis},
+      {"Note it down,", 1.0f, &kPortalGfxBody},
+      {"then tap BOOT", 1.0f, &kPortalGfxBody},
   };
   drawTextBlock(config::kColorYellow, config::kTextOnYellow, lines,
                 sizeof(lines) / sizeof(lines[0]));

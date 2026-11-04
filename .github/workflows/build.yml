@@ -35,13 +35,24 @@ jobs:
           python-version: "3.11"
 
       - name: Install PlatformIO
-        run: pip install --upgrade platformio
+        run: pip install "platformio==6.2.0"  # pioarduino 55.03.x needs Core >= 6.2.0
+
+      - name: Unit tests (host)
+        run: pio test -e native
+
+      - name: Static analysis
+        run: pio check -e supermini --fail-on-defect=low
 
       - name: Build
         run: pio run -e supermini
 
       - name: Merge web-flash image
         run: pio run -t merge -e supermini
+
+      # Branch and PR builds are not signed (see release.yml), so devices
+      # refuse them over the air; flash them over USB to test.
+      - name: Software bill of materials
+        run: python scripts/make_sbom.py --version "${GITHUB_SHA::7}" --out .pio/build/supermini/sbom.cdx.json
 
       - name: Upload firmware artifacts
         uses: actions/upload-artifact@v4
@@ -53,3 +64,4 @@ jobs:
             .pio/build/supermini/firmware.bin
             .pio/build/supermini/bootloader.bin
             .pio/build/supermini/partitions.bin
+            .pio/build/supermini/sbom.cdx.json

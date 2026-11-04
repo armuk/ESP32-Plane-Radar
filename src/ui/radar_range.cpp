@@ -78,6 +78,23 @@ void rangeNext() {
   saveRangeIndex();
 }
 
+bool saveRangeFromPortal(const char* index_value) {
+  if (index_value == nullptr || index_value[0] < '0' || index_value[0] > '9' ||
+      index_value[1] != '\0') {
+    return false;
+  }
+  const uint8_t index = static_cast<uint8_t>(index_value[0] - '0');
+  if (index >= kRangePresetCount || index == s_range_index) {
+    return false;
+  }
+  s_range_index = index;
+  saveRangeIndex();
+  char label[12];
+  formatCurrentRing3Label(label, sizeof(label));
+  Serial.printf("Range: %s (from Setup)\n", label);
+  return true;
+}
+
 const RangePreset& rangeCurrent() { return kRangePresets[s_range_index]; }
 
 uint8_t rangeIndex() { return s_range_index; }

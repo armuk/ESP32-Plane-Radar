@@ -34,12 +34,48 @@ jobs:
           python-version: "3.11"
 
       - name: Install PlatformIO
-        run: pip install --upgrade platformio
+        # cryptography: scripts/sign_firmware.py
+        run: pip install "platformio==6.2.0" cryptography  # pioarduino 55.03.x needs Core >= 6.2.0
+
+      - name: Unit tests and static analysis
+        run: |
+          pio test -e native
+          pio check -e supermini --fail-on-defect=low
+
+      # Devices only install over-the-air updates signed with the key whose
+      # public half is keys/ota-signing-public.pem. The private key lives only
+      # in the OTA_SIGNING_KEY secret (PEM) and is written to the runner's temp
+      # directory for this job. Tag builds must be signed; manual runs are not
+      # (their version is not a release number, so it would get past the
+      # device's downgrade check) and publish no -ota.bin.
+      - name: Prepare signing key
+        if: github.event_name == 'push'
+        env:
+          OTA_SIGNING_KEY: ${{ secrets.OTA_SIGNING_KEY }}
+        run: |
+          if [[ -z "$OTA_SIGNING_KEY" ]]; then
+            echo "::error::The OTA_SIGNING_KEY secret is not set; a release needs a signed update image."
+            exit 1
+          fi
+          umask 077
+          printf '%s\n' "$OTA_SIGNING_KEY" > "$RUNNER_TEMP/ota-signing-key.pem"
+          echo "PLANE_RADAR_SIGNING_KEY=$RUNNER_TEMP/ota-signing-key.pem" >> "$GITHUB_ENV"
+          echo "PLANE_RADAR_REQUIRE_SIGNING=1" >> "$GITHUB_ENV"
 
       - name: Build and merge
+        env:
+          # Shown on the device's info and firmware pages.
+          PLANE_RADAR_VERSION: ${{ github.event_name == 'workflow_dispatch' && format('manual-{0}', github.sha) || github.ref_name }}
+          # The Status page's "Update available" notice checks this
+          # repository's latest release.
+          PLANE_RADAR_RELEASE_REPO: ${{ github.repository }}
         run: |
           pio run -e supermini
           pio run -t merge -e supermini
+
+      - name: Remove signing key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/ota-signing-key.pem"
 
       - name: Package release files
         run: |
@@ -49,10 +85,16 @@ jobs:
           fi
           mkdir -p dist
           cp .pio/build/supermini/firmware-merged.bin "dist/plane-radar-${VERSION}-full.bin"
-          cp .pio/build/supermini/firmware.bin "dist/plane-radar-${VERSION}-ota.bin"
+          if [[ -f .pio/build/supermini/firmware-signed.bin ]]; then
+            cp .pio/build/supermini/firmware-signed.bin "dist/plane-radar-${VERSION}-ota.bin"
+          fi
+          # Symbols for decoding crash dumps from this build (scripts/read_coredump.py --elf).
+          cp .pio/build/supermini/firmware.elf "dist/plane-radar-${VERSION}.elf"
           for image in dist/*.bin; do
             sha256sum "$image" > "${image}.sha256"
           done
+          # Software bill of materials (CycloneDX JSON) for this build.
+          python scripts/make_sbom.py --version "${VERSION}" --out "dist/plane-radar-${VERSION}.cdx.json"
           echo "version=${VERSION}" >> "$GITHUB_ENV"
 
       - name: Publish GitHub Release
