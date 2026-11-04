@@ -49,11 +49,13 @@ Session::Session(WiFiClientSecure& client, const char* tag)
   // takes under 2 s, and the web pages wait while it runs.
   client_.setHandshakeTimeout(kHandshakeTimeoutS);
 
-#if PLANE_RADAR_TLS_VERIFY != 0
+  // ESP-IDF's built-in root bundle (Mozilla's CA list, ~150 roots, updated
+  // with each core release). Linking any bundle check pulls all of it into
+  // flash (~69 KB), so a smaller custom bundle would save nothing.
+#if PLANE_RADAR_TLS_VERIFY == 1
+  client_.useBuiltinCACertBundle();
+#elif PLANE_RADAR_TLS_VERIFY == 2
   if (verify_) {
-    // ESP-IDF's built-in root bundle (Mozilla's CA list, ~150 roots, updated
-    // with each core release). Linking any bundle check pulls all of it into
-    // flash (~69 KB), so a smaller custom bundle would save nothing.
     client_.useBuiltinCACertBundle();
   } else {
     client_.setInsecure();
@@ -76,7 +78,7 @@ Session::~Session() {
 #if PLANE_RADAR_TLS_VERIFY == 1
   // A refused certificate can mean someone is intercepting the connection:
   // put it in the security log, once per host per boot (no flash writes).
-  if (verify_ && code_ < 0) {
+  if (code_ < 0) {  // verify_ is always true in this build
     char err[80] = "";
     client_.lastError(err, sizeof(err));
     if (strstr(err, "X509") != nullptr || strstr(err, "erif") != nullptr) {

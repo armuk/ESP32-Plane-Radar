@@ -66,7 +66,7 @@ Key events are also kept in flash, so they survive power cuts: updates installed
 
 ### Outbound connections
 
-All data services are fetched over HTTPS, and since v2.1.0 **server certificates are checked** against ESP-IDF's built-in root certificate bundle (Mozilla's list, updated with each core release). A refused certificate, which can mean someone is intercepting the connection, is logged on the Security page once per host per boot. The device then has no data from that service; nothing else changes. Certificate expiry dates are not checked (see [Known limitations](#known-limitations)).
+All data services are fetched over HTTPS, and since v2.1.1 **server certificates are checked** against ESP-IDF's built-in root certificate bundle (Mozilla's list, updated with each core release). A refused certificate, which can mean someone is intercepting the connection, is logged on the Security page once per host per boot. The device then has no data from that service; nothing else changes. Certificate expiry dates are not checked (see [Known limitations](#known-limitations)).
 
 **Update check.** Release builds ask GitHub once a day (`api.github.com/repos/<repo>/releases/latest`) whether a newer release exists. `<repo>` is the repository that built the firmware. The request sends the device's IP address, as any web request does, and a User-Agent of `PlaneRadar/<version>`. Only the release tag and the link to its page are read. Nothing is downloaded or installed automatically. Even if the notice were faked, nothing could be installed, because updates must be signed. Builds without a release repository never make this request.
 

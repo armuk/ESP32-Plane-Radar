@@ -6,7 +6,7 @@
  * HTTPS certificate policy, chosen at build time with PLANE_RADAR_TLS_VERIFY:
  *   0            no certificate check (setInsecure)
  *   1 (default)  check against ESP-IDF's built-in root CA bundle (needs the
- *                v2.1.0 partition layout: the bundle adds ~69 KB of flash)
+ *                v2.1.1 partition layout: the bundle adds ~69 KB of flash)
  *   2            measurement: alternate checked / unchecked per host and log
  *                each request's heap low point ("tls-ab:" lines)
  * Certificate dates are not checked (MBEDTLS_HAVE_TIME_DATE is off in the

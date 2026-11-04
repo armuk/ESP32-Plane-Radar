@@ -242,7 +242,7 @@ void handleUploadChunk() {
       return;
     }
     // A partition table cannot change over the air. An image built for
-    // larger app slots (e.g. v2.1.0's layout on a v2.0.x device) does not
+    // larger app slots (e.g. v2.1.1's layout on a v2.0.x device) does not
     // fit; say how to move to the new layout instead of "Not enough space".
     const esp_partition_t* target = esp_ota_get_next_update_partition(nullptr);
     if (target != nullptr && static_cast<size_t>(size) > target->size) {

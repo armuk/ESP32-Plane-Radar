@@ -353,7 +353,7 @@ Devices upgraded from firmware that used the old shared default password `plane-
 | `spiffs` (LittleFS) | `0x3D0000` | 128 KB | Downloaded airports (a few KB) |
 | `coredump` | `0x3F0000` | 64 KB | Last crash dump |
 
-**Upgrading from v2.0.x needs one USB flash.** v2.1.0 grew each app slot by 128 KB (and shrank the file store from 384 KB) so that HTTPS certificate checking fits. A partition table can't be changed over the air: a v2.0.x device refuses the v2.1.0 `-ota.bin` because it is larger than its update slot, and says so. Pick one:
+**Upgrading from v2.0.x needs one USB flash.** v2.1.1 grew each app slot by 128 KB (and shrank the file store from 384 KB) so that HTTPS certificate checking fits. A partition table can't be changed over the air: a v2.0.x device refuses the v2.1.1 `-ota.bin` because it is larger than its update slot, and says so. Pick one:
 
 - **From a source checkout (keeps everything):** `pio run -e supermini -t upload`. This writes the bootloader, the partition table and the app, and leaves the settings area alone, so Wi‑Fi, settings and the password are kept. The airports are downloaded again on first start.
 - **With a web flasher and the release's `-full.bin` (erases settings):** the image covers the settings area, so Wi‑Fi, settings and the settings password are erased. First save your settings on **Status → Backup & restore**. After flashing, join the `PlaneRadar-Setup` hotspot, set up Wi‑Fi, log in with the new password shown on the screen, and restore the backup.
