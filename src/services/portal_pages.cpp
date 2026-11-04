@@ -117,8 +117,19 @@ void showAboutPage() {
   body.reserve(2600);
   body += F("<h1>About</h1><dl><dt>Plane Radar firmware</dt><dd>");
   body += config::kFirmwareVersion;
-  body += F("</dd><dt>Based on</dt><dd><a href='https://github.com/MatixYo/"
-            "ESP32-Plane-Radar'>MatixYo/ESP32-Plane-Radar</a></dd>"
+  body += F("</dd>");
+  if (PLANE_RADAR_RELEASE_REPO[0] != '\0') {
+    // Fixed at build time to owner/name characters (firmware_version.py).
+    body += F("<dt>Source</dt><dd><a href='https://github.com/");
+    body += PLANE_RADAR_RELEASE_REPO;
+    body += F("'>");
+    body += PLANE_RADAR_RELEASE_REPO;
+    body += F("</a></dd>");
+  }
+  body += F("<dt>Based on</dt><dd><a href='https://github.com/ironicbadger/"
+            "ESP32-Plane-Radar'>ironicbadger/ESP32-Plane-Radar</a>, a fork "
+            "of <a href='https://github.com/MatixYo/ESP32-Plane-Radar'>"
+            "MatixYo/ESP32-Plane-Radar</a></dd>"
             "<dt>Arduino-ESP32 core</dt><dd>");
   body += String(ESP_ARDUINO_VERSION_MAJOR) + "." +
           String(ESP_ARDUINO_VERSION_MINOR) + "." +
