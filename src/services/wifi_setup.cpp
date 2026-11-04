@@ -1,4 +1,5 @@
 #include "services/wifi_setup.h"
+#include "services/weak_signal.h"
 
 #include <WiFi.h>
 #include <WiFiManager.h>
@@ -905,13 +906,12 @@ void preferStrongestAp() {
 #endif
 constexpr int kWeakRssiDbm = PLANE_RADAR_WEAK_RSSI_DBM;
 constexpr unsigned long kSignalSampleMs = 30UL * 1000UL;
-constexpr int kWeakSamplesToRejoin = 6;  // 3 minutes in a row
 constexpr unsigned long kRejoinMinIntervalMs = 15UL * 60UL * 1000UL;
 constexpr unsigned long kRejoinMaxIntervalMs = 4UL * 60UL * 60UL * 1000UL;
 
 struct SignalWatch {
   unsigned long last_sample_ms = 0;
-  int weak_samples = 0;
+  services::wifi_signal::WeakSignalWindow window{kWeakRssiDbm};
   unsigned long last_rejoin_ms = 0;
   unsigned long rejoin_interval_ms = kRejoinMinIntervalMs;
   bool awaiting_result = false;
@@ -1117,7 +1117,7 @@ bool wifiRejoinInProgress() {
 
 void wifiCheckSignal() {
   if (!wifiLinkUp()) {
-    s_signal.weak_samples = 0;
+    s_signal.window.clear();
     return;
   }
   const unsigned long now = millis();
@@ -1142,21 +1142,23 @@ void wifiCheckSignal() {
               : std::min(s_signal.rejoin_interval_ms * 2, kRejoinMaxIntervalMs);
   }
 
-  s_signal.weak_samples = rssi < kWeakRssiDbm ? s_signal.weak_samples + 1 : 0;
-  if (s_signal.weak_samples < kWeakSamplesToRejoin ||
+  s_signal.window.add(rssi);
+  if (!s_signal.window.mostlyWeak() ||
       (s_signal.last_rejoin_ms != 0 &&
        now - s_signal.last_rejoin_ms < s_signal.rejoin_interval_ms) ||
       bssid == nullptr) {
     return;
   }
-  s_signal.weak_samples = 0;
+  const int weak = s_signal.window.weakCount();
+  const int samples = s_signal.window.samples();
+  s_signal.window.clear();
   s_signal.last_rejoin_ms = now;
   s_signal.awaiting_result = true;
   s_signal.rejoin_started_ms = now != 0 ? now : 1;
   s_signal.rssi_before = rssi;
   memcpy(s_signal.bssid_before, bssid, 6);
-  services::security::logEvent("Wi-Fi weak (%d dBm for 3 min): rejoining",
-                               rssi);
+  services::security::logEvent("Wi-Fi weak (%d dBm, %d of last %d samples): "
+                               "rejoining", rssi, weak, samples);
   preferStrongestAp();
   WiFi.reconnect();  // leave + full scan, strongest access point first
 }

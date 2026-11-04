@@ -33,9 +33,16 @@ bool newerRelease(const char* running, const char* latest) {
 #ifdef ARDUINO
 namespace {
 
-constexpr unsigned long kFirstCheckMs = 2UL * 60UL * 1000UL;
+// Test builds shorten these with -DPLANE_RADAR_UPDATE_FIRST_MS=... etc.
+#ifndef PLANE_RADAR_UPDATE_FIRST_MS
+#define PLANE_RADAR_UPDATE_FIRST_MS (2UL * 60UL * 1000UL)
+#endif
+#ifndef PLANE_RADAR_UPDATE_RETRY_MS
+#define PLANE_RADAR_UPDATE_RETRY_MS (60UL * 60UL * 1000UL)
+#endif
+constexpr unsigned long kFirstCheckMs = PLANE_RADAR_UPDATE_FIRST_MS;
 constexpr unsigned long kCheckIntervalMs = 24UL * 60UL * 60UL * 1000UL;
-constexpr unsigned long kRetryMs = 60UL * 60UL * 1000UL;
+constexpr unsigned long kRetryMs = PLANE_RADAR_UPDATE_RETRY_MS;
 constexpr unsigned long kTimeoutMs = 6000UL;
 constexpr char kReleasePagePrefix[] = "https://github.com/";
 
@@ -69,6 +76,72 @@ bool cleanTag(const char* tag, char* out, size_t out_len) {
   memcpy(out, tag, len + 1);
   return true;
 }
+
+/**
+ * Feeds the JSON parser from the HTTPS stream, waiting for data.
+ *
+ * WiFiClientSecure's read() returns -1 as soon as the next TLS record has
+ * not arrived yet, and the parser takes that as the end of the reply, so
+ * replies larger than a few KB failed part-way ("IncompleteInput after 5503
+ * of 12028 bytes" in 29 ms). This waits until data arrives, the server has
+ * closed and everything is read, or nothing has come for timeout_ms. Reads
+ * go through a small buffer: one TLS read per byte would be slow.
+ */
+class WaitingReader {
+ public:
+  WaitingReader(WiFiClientSecure& client, unsigned long timeout_ms)
+      : client_(client), timeout_ms_(timeout_ms) {}
+
+  int read() {
+    if (pos_ == len_ && !fill()) {
+      return -1;
+    }
+    ++count_;
+    return buffer_[pos_++];
+  }
+
+  size_t readBytes(char* out, size_t length) {
+    size_t n = 0;
+    while (n < length) {
+      const int c = read();
+      if (c < 0) {
+        break;
+      }
+      out[n++] = static_cast<char>(c);
+    }
+    return n;
+  }
+
+  size_t count() const { return count_; }
+
+ private:
+  bool fill() {
+    const unsigned long started = millis();
+    while (true) {
+      const int n = client_.read(buffer_, sizeof(buffer_));
+      if (n > 0) {
+        pos_ = 0;
+        len_ = static_cast<size_t>(n);
+        return true;
+      }
+      if (!client_.connected() && client_.available() <= 0) {
+        return false;  // closed and fully read
+      }
+      if (millis() - started >= timeout_ms_) {
+        return false;
+      }
+      poll();
+      delay(5);
+    }
+  }
+
+  WiFiClientSecure& client_;
+  unsigned long timeout_ms_;
+  uint8_t buffer_[128];
+  size_t pos_ = 0;
+  size_t len_ = 0;
+  size_t count_ = 0;
+};
 
 bool fetchLatest() {
   char url[160];
@@ -106,14 +179,22 @@ bool fetchLatest() {
   filter["tag_name"] = true;
   filter["html_url"] = true;
   JsonDocument doc;
+  const int expected = http.getSize();  // -1 when the server sent no length
+  WaitingReader reader(client, kTimeoutMs);
+  const unsigned long started = millis();
   const DeserializationError error = deserializeJson(
-      doc, http.getStream(), DeserializationOption::Filter(filter));
+      doc, reader, DeserializationOption::Filter(filter));
+  const unsigned long took_ms = millis() - started;
   http.end();
   poll();
   if (error) {
-    Serial.printf("update check: JSON error %s\n", error.c_str());
+    Serial.printf("update check: JSON error %s after %u of %d bytes, %lu ms\n",
+                  error.c_str(), static_cast<unsigned>(reader.count()), expected,
+                  took_ms);
     return false;
   }
+  Serial.printf("update check: read %u bytes in %lu ms\n",
+                static_cast<unsigned>(reader.count()), took_ms);
   char tag[sizeof(s_latest)];
   if (!cleanTag(doc["tag_name"] | "", tag, sizeof(tag))) {
     Serial.println("update check: no usable tag");

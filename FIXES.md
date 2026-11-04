@@ -241,6 +241,13 @@ Measured against the NCSC [device security principles for manufacturers](https:/
 - **Cost:** about 24 KB of flash (the image is 1,795,072 of 1,835,008 bytes, so 39.9 KB spare). The heap low point was unchanged (20.6 KB); the GitHub request did not lower it.
 - **Verified on the device** with a test build labelled `v1.1.4-test` that checks the upstream repository: the update check ran at about 2 minutes (`latest v1.1.5 ... update available`) and logged it; the new pages return 401 without the login. 9 new host tests (backup file checks, version rule).
 
+### [x] T10. Weak-signal rejoin for hovering links; update check read the whole reply (2026-11-04)
+- **Symptom:** the portal was very slow (two loads hung for 30 s). The security log showed the radar had joined a weak access point at boot, and no rejoin followed.
+- **Rejoin trigger** ([weak_signal.h](include/services/weak_signal.h)): T8 rejoined after 6 weak samples *in a row* (30 s apart, below −78 dBm). A link hovering around the threshold never fired, because one better reading reset the count. It now rejoins when at least 4 of the last 6 samples are weak. That still takes 2 minutes after a weak join, while an occasional dip on a good link does not trigger it. The log line now reads `Wi-Fi weak (-NN dBm, 4 of last 4 samples): rejoining`. 7 host tests. Verified with a −40 dBm test threshold: the rejoin fired after 4 samples, left with `ASSOC_LEAVE` and rejoined in about 1 s. The core logs `sta is connecting, cannot set config` during that rejoin (its auto-reconnect overlaps `WiFi.reconnect()`); this is harmless.
+- **Update check failed part-way** ([update_check.cpp](src/services/update_check.cpp)): `JSON error IncompleteInput after 5503 of 12028 bytes` in 29 ms. `WiFiClientSecure::read()` returns −1 whenever the next TLS record has not arrived, and the JSON parser took that as the end of the reply. The upstream reply (6.5 KB) usually fitted before such a gap; the reply from this repository (12 KB) usually did not. A small reader now waits for data, up to the request timeout, until the server has closed and everything is read. It reads through a 128-byte buffer and logs the bytes read. Verified: 5 restarts in a row each read all 12,028 bytes on the first attempt (51–154 ms). **v2.0.1 and v2.0.2 as released have this bug**: their check often fails and retries hourly.
+- `PLANE_RADAR_UPDATE_FIRST_MS` and `PLANE_RADAR_UPDATE_RETRY_MS` let test builds run the check sooner.
+- One boot took 45 s to its first data: every HTTPS connect timed out for 40 s after joining, though DNS worked. The next 6 boots took 5.2–9.5 s, so this looks like a one-off on the network side.
+
 ## Reliability and tooling (2026-11-03)
 
 ### [x] R1. Self-recovery restart
