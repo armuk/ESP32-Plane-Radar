@@ -7,6 +7,8 @@ void statusScreenSettingsPassword(const char* password);
 void statusScreenConnectFailed();
 void statusScreenWifiReset();
 void statusScreenFirmwareUpdate();
+/** Downloading a release from the Status page: percent done (0-100). */
+void statusScreenFirmwareDownload(int percent);
 
 /** Saved-network connect animation (call Tick until connect finishes). */
 void statusScreenConnectingBegin(const char* ssid);

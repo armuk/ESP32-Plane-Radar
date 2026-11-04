@@ -32,7 +32,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.11"
+          python-version: "3.14"
 
       - name: Install PlatformIO
         run: pip install "platformio==6.2.0"  # pioarduino 55.03.x needs Core >= 6.2.0

@@ -400,10 +400,17 @@ void loop() {
   wifiLoop();
   logHeapIfDue();  // also runs while Wi-Fi is down, to spot reconnect leaks
 
-  // Firmware uploads always show their progress screen.
-  updateNightScreen(services::ota::inProgress());
+  // Firmware uploads and installs always show their progress screen.
+  updateNightScreen(services::ota::inProgress() ||
+                    services::ota::installPending());
 
   static bool ota_was_in_progress = false;
+  if (services::ota::installPending()) {
+    // Restarts on success; on failure the radar is redrawn below next pass.
+    services::ota::runPendingInstall();
+    ota_was_in_progress = true;
+    return;
+  }
   if (services::ota::inProgress()) {
     ota_was_in_progress = true;
     delay(10);

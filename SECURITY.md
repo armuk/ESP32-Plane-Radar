@@ -68,7 +68,9 @@ Key events are also kept in flash, so they survive power cuts: updates installed
 
 All data services are fetched over HTTPS, and since v2.1.1 **server certificates are checked** against ESP-IDF's built-in root certificate bundle (Mozilla's list, updated with each core release). A refused certificate, which can mean someone is intercepting the connection, is logged on the Security page once per host per boot. The device then has no data from that service; nothing else changes. Certificate expiry dates are not checked (see [Known limitations](#known-limitations)).
 
-**Update check.** Release builds ask GitHub once a day (`api.github.com/repos/<repo>/releases/latest`) whether a newer release exists. `<repo>` is the repository that built the firmware. The request sends the device's IP address, as any web request does, and a User-Agent of `PlaneRadar/<version>`. Only the release tag and the link to its page are read. Nothing is downloaded or installed automatically. Even if the notice were faked, nothing could be installed, because updates must be signed. Builds without a release repository never make this request.
+**Update check.** Release builds ask GitHub once a day (`api.github.com/repos/<repo>/releases/latest`) whether a newer release exists. `<repo>` is the repository that built the firmware. The request sends the device's IP address, as any web request does, and a User-Agent of `PlaneRadar/<version>`. Only the release tag and the link to its page are read. Nothing is downloaded or installed automatically. Builds without a release repository never make this request.
+
+**Install from the Status page.** When a newer release is on offer, a logged-in user can press **Install** (a POST to `/update-install`, accepted only from the device's own pages and only for the tag currently on offer). The device then downloads `https://github.com/<repo>/releases/download/<tag>/plane-radar-<tag>-ota.bin`, following GitHub's redirect to its download host, over HTTPS with certificate checking. The image goes through the same checks as an upload: it must be signed with the release key, must not be older than the installed version, must report exactly the version of the tag, and must fit the update slot; rollback applies as usual. The signature is what makes this safe: a faked notice, a tampered download or a hijacked connection can only lead to a refused image, never an installed one. A failed install leaves the running firmware in place, is recorded as a kept event, and is shown on the Status page.
 
 ## Interfaces
 
@@ -82,7 +84,7 @@ All data services are fetched over HTTPS, and since v2.1.1 **server certificates
 | mDNS (`<name>.local`, UDP 5353) | Both | Announces the web interface. |
 | DHCP, DNS | Outbound | Standard; trusts the network. |
 | NTP (UDP 123) | Outbound | `pool.ntp.org` (configurable) and `time.nist.gov`. Not authenticated; only sets the clock. |
-| adsb.fi, ADSBDB, Open-Meteo, GitHub Pages (airport data), GitHub API (update check, daily) | Outbound HTTPS | TLS with certificate checking against the built-in root bundle (expiry dates not checked). |
+| adsb.fi, ADSBDB, Open-Meteo, GitHub Pages (airport data), GitHub API (update check, daily), GitHub release downloads (only when Install is pressed) | Outbound HTTPS | TLS with certificate checking against the built-in root bundle (expiry dates not checked). |
 | Local receiver (optional) | Outbound HTTP | A `tar1090`/`readsb` `aircraft.json` URL on your network that you configure. |
 
 ### Web endpoints
@@ -107,6 +109,7 @@ All data services are fetched over HTTPS, and since v2.1.1 **server certificates
 | `/restart`, `/exit`, `/close` | GET | Yes (open on hotspot) | Restart / leave the portal |
 | `/firmware`, `/update` | GET | Yes, always | Firmware upload page |
 | `/firmware-upload`, `/u` | POST | Yes, always | Upload a signed image |
+| `/update-install` | POST | Yes, always; same-origin only | Download and install the release on offer |
 | anything else | any | No | Captive-portal redirect to `/` |
 
 ## Exploit mitigations

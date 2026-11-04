@@ -23,6 +23,23 @@ unsigned long lastPortalRequestMs();
 bool inProgress();
 
 /**
+ * True after the Status page's "Install" button, until runPendingInstall()
+ * runs. loop() checks it first.
+ */
+bool installPending();
+
+/**
+ * Downloads the requested release's signed -ota.bin into the update slot,
+ * with the same signature, size, downgrade and rollback checks as an
+ * upload, and restarts on success. Blocks for about a minute; the screen
+ * shows progress. On failure it returns and installError() says why.
+ */
+void runPendingInstall();
+
+/** Why the last Install failed ("v1.2.3: reason"), or empty. */
+const String& installError();
+
+/**
  * Call once early in setup(). Notes whether this boot is a new image waiting
  * to be confirmed, and whether an earlier update was rolled back.
  */

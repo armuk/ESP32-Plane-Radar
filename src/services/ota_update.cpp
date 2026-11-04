@@ -1,7 +1,9 @@
 #include "services/ota_update.h"
 
+#include <HTTPClient.h>
 #include <Update.h>
 #include <Updater_Signing.h>
+#include <WiFiClientSecure.h>
 
 #include <cstring>
 #include <WiFiManager.h>
@@ -11,13 +13,18 @@
 #include <iterator>
 
 #include <cstdio>
+#include <memory>
+#include <new>
 
 #include "config.h"
 #include "version.h"
 #include "services/display_settings.h"
 #include "services/firmware_image.h"
+#include "services/net_dns.h"
 #include "services/portal_style.h"
 #include "services/security.h"
+#include "services/tls_trust.h"
+#include "services/update_check.h"
 #include "services/wifi_setup.h"
 #include "ui/status_screens.h"
 
@@ -208,6 +215,86 @@ void recordUpdateError() {
   Update.abort();
 }
 
+// --- Writing an image: shared by uploads and the Status page's Install ---
+
+/**
+ * A partition table cannot change over the air. An image built for larger
+ * app slots (e.g. v2.1.1's layout on a v2.0.x device) does not fit; say how
+ * to move to the new layout instead of "Not enough space". Empty if it fits.
+ */
+String slotSizeError(size_t size) {
+  const esp_partition_t* target = esp_ota_get_next_update_partition(nullptr);
+  if (target == nullptr || size <= target->size) {
+    return String();
+  }
+  return "Refused: this image (" + String(static_cast<unsigned long>(size)) +
+         " bytes) is larger than this device's update slot (" +
+         String(static_cast<unsigned long>(target->size)) +
+         " bytes). It needs the newer partition layout: flash the -full.bin "
+         "over USB once (see the README, \"Partition layout\").";
+}
+
+/** Starts writing a size-byte signed image. False sets s_upload_error. */
+bool beginImage(size_t size) {
+  s_version_scanner.reset();
+  if (!Update.installSignature(&signatureVerifier()) ||
+      !Update.begin(size, U_FLASH)) {
+    recordUpdateError();
+    return false;
+  }
+  return true;
+}
+
+bool writeImage(const uint8_t* data, size_t len) {
+  s_version_scanner.feed(data, len);
+  if (Update.write(const_cast<uint8_t*>(data), len) != len) {
+    recordUpdateError();
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Refuses a downgrade (and, when expected_version is set, an image that
+ * reports another version), then checks the signature over the whole image
+ * and makes it the next boot image. False sets s_upload_error.
+ */
+bool finishImage(const char* expected_version) {
+  const char* incoming =
+      s_version_scanner.found() ? s_version_scanner.version() : "";
+  // Before Update.end() can make it the boot image.
+  if (firmware_image::isDowngrade(config::kFirmwareVersion, incoming)) {
+    Update.abort();
+    s_upload_error = String("Refused: ") + incoming +
+                     " is older than the installed " + config::kFirmwareVersion +
+                     ". Downgrade over USB if you really need it.";
+    return false;
+  }
+  if (expected_version != nullptr && strcmp(incoming, expected_version) != 0) {
+    Update.abort();
+    s_upload_error = String("Refused: the downloaded image reports version ") +
+                     (incoming[0] != '\0' ? incoming : "(none)") + ", not " +
+                     expected_version + ".";
+    return false;
+  }
+  // end() checks the signature over the whole image before activating it.
+  if (!Update.end(true)) {
+    recordUpdateError();
+    return false;
+  }
+  security::logKeyEvent("update %s verified and installed",
+                        incoming[0] != '\0' ? incoming : "(no version)");
+  return true;
+}
+
+/** Key event for a refused or failed update, without the "Refused: ". */
+void logRefusal(const char* reason) {
+  if (strncmp(reason, "Refused: ", 9) == 0) {
+    reason += 9;
+  }
+  security::logKeyEvent("update refused: %.56s", reason);
+}
+
 void handleUploadChunk() {
   WebServer* web = server();
   if (web == nullptr) {
@@ -241,27 +328,15 @@ void handleUploadChunk() {
           "JavaScript enabled.";
       return;
     }
-    // A partition table cannot change over the air. An image built for
-    // larger app slots (e.g. v2.1.1's layout on a v2.0.x device) does not
-    // fit; say how to move to the new layout instead of "Not enough space".
-    const esp_partition_t* target = esp_ota_get_next_update_partition(nullptr);
-    if (target != nullptr && static_cast<size_t>(size) > target->size) {
-      s_upload_error =
-          "Refused: this image (" + String(size) + " bytes) is larger than "
-          "this device's update slot (" + String(target->size) +
-          " bytes). It needs the newer partition layout: flash the -full.bin "
-          "over USB once (see the README, \"Partition layout\").";
+    s_upload_error = slotSizeError(static_cast<size_t>(size));
+    if (s_upload_error.length() != 0) {
       return;
     }
 
     statusScreenFirmwareUpdate();
     security::logEvent("update started from %s (%ld bytes)",
                        web->client().remoteIP().toString().c_str(), size);
-    s_version_scanner.reset();
-    if (!Update.installSignature(&signatureVerifier()) ||
-        !Update.begin(static_cast<size_t>(size), U_FLASH)) {
-      recordUpdateError();
-    }
+    beginImage(static_cast<size_t>(size));
     return;
   }
 
@@ -283,29 +358,9 @@ void handleUploadChunk() {
 
   s_last_upload_activity_ms = millis();
   if (upload.status == UPLOAD_FILE_WRITE) {
-    s_version_scanner.feed(upload.buf, upload.currentSize);
-    if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
-      recordUpdateError();
-    }
+    writeImage(upload.buf, upload.currentSize);
   } else if (upload.status == UPLOAD_FILE_END) {
-    // Refuse a downgrade before Update.end() can make it the boot image.
-    const char* incoming =
-        s_version_scanner.found() ? s_version_scanner.version() : "";
-    if (firmware_image::isDowngrade(config::kFirmwareVersion, incoming)) {
-      Update.abort();
-      s_upload_error = String("Refused: ") + incoming +
-                       " is older than the installed " +
-                       config::kFirmwareVersion +
-                       ". Downgrade over USB if you really need it.";
-      return;
-    }
-    // end() checks the signature over the whole image before activating it.
-    if (!Update.end(true)) {
-      recordUpdateError();
-    } else {
-      security::logKeyEvent("update %s verified and installed",
-                         incoming[0] != '\0' ? incoming : "(no version)");
-    }
+    finishImage(nullptr);
   }
 }
 
@@ -329,13 +384,8 @@ void handleUploadDone() {
                                           : String(Update.errorString())) +
             "</div><p><a href='/firmware'>Try again</a></p>");
     web->send(500, "text/html", message);
-    const char* reason = s_upload_error.length() != 0
-                             ? s_upload_error.c_str()
-                             : Update.errorString();
-    if (strncmp(reason, "Refused: ", 9) == 0) {
-      reason += 9;
-    }
-    security::logKeyEvent("update refused: %.56s", reason);
+    logRefusal(s_upload_error.length() != 0 ? s_upload_error.c_str()
+                                            : Update.errorString());
     return;
   }
 
@@ -347,6 +397,166 @@ void handleUploadDone() {
   delay(250);
   web->client().stop();
   wifiLeaveAndRestart();
+}
+
+// --- Install from the Status page ---
+// The button only records which release to install; loop() then runs the
+// download (runPendingInstall), because it takes about a minute and the web
+// server is not served meanwhile.
+
+/** Stop a download after this long without data. */
+constexpr unsigned long kDownloadStallMs = 20000UL;
+constexpr size_t kDownloadChunk = 2048;
+
+char s_install_tag[32] = "";  // requested, not started yet
+String s_install_error;       // last failed install, for the Status page
+
+constexpr char kInstallingPage[] PROGMEM = R"HTML(<h1>Installing %TAG%</h1>
+<div class='msg S' id='m'>Downloading and checking the update. This takes about
+a minute, and the radar restarts when it is done. Keep power connected.</div>
+<script>
+function chk(){var c=new AbortController();setTimeout(function(){c.abort()},8000);
+fetch('/status.json',{signal:c.signal,cache:'no-store'}).then(function(r){return r.json()})
+.then(function(j){if(j.firmware.version=='%TAG%'||j.updates.install_error){location='/status';}
+else{setTimeout(chk,5000);}}).catch(function(){setTimeout(chk,5000);});}
+setTimeout(chk,10000);
+setTimeout(function(){document.getElementById('m').innerHTML+=
+' <a href="/status">Open Status</a>';},180000);
+</script>)HTML";
+
+void handleInstallRequest() {
+  WebServer* web = server();
+  // Needs the login even on the setup hotspot, like a firmware upload.
+  if (web == nullptr || !requestAuthenticated() ||
+      !security::requireSameOrigin(*web)) {
+    return;
+  }
+  const String tag = web->arg("tag");
+  if (!updates::updateAvailable() || tag != updates::latestTag()) {
+    web->send(409, "text/html",
+              portal::page("Update not offered", "",
+                           "<h1>Update not offered</h1><div class='msg D'>That "
+                           "release is no longer the one on offer.</div><p><a "
+                           "href='/status'>Back to Status</a></p>"));
+    return;
+  }
+  // latestTag() only holds [A-Za-z0-9.-_+], so it is safe in the page.
+  snprintf(s_install_tag, sizeof(s_install_tag), "%s", updates::latestTag());
+  s_install_error.clear();
+  security::logEvent("install of %s requested from %s", s_install_tag,
+                     web->client().remoteIP().toString().c_str());
+  String body(kInstallingPage);
+  body.replace("%TAG%", s_install_tag);
+  web->send(200, "text/html", portal::page("Installing update", "", body));
+}
+
+/**
+ * Downloads the release's signed -ota.bin straight into the update slot.
+ * The signature, not the HTTPS connection, is what makes it safe: an image
+ * not signed with this device's key is refused at the end, as are older
+ * versions and images that report a version other than tag.
+ */
+bool downloadAndInstall(const char* tag) {
+  char url[200];
+  if (!updates::releaseAssetUrl(PLANE_RADAR_RELEASE_REPO, tag, url, sizeof(url))) {
+    s_upload_error = "This build has no release download address.";
+    return false;
+  }
+  if (!net::resolveQuickly(url, net::kDnsTimeoutMs, wifiPollDuringIo)) {
+    s_upload_error = "Could not look up github.com.";
+    return false;
+  }
+  WiFiClientSecure client;
+  tls::Session tls(client, "release download");
+  HTTPClient http;
+  if (!http.begin(client, url)) {
+    s_upload_error = "Could not start the download.";
+    return false;
+  }
+  http.setConnectTimeout(kDownloadStallMs);
+  http.setTimeout(kDownloadStallMs);
+  http.useHTTP10(true);  // unchunked, with a Content-Length
+  http.setReuse(false);
+  // GitHub answers with a redirect to its download host.
+  http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+  http.setUserAgent(String("PlaneRadar/") + config::kFirmwareVersion);
+  wifiPollDuringIo();
+  const int code = http.GET();
+  tls.setResult(code);
+  if (code != HTTP_CODE_OK) {
+    s_upload_error = code < 0 ? String("Download failed: ") +
+                                    HTTPClient::errorToString(code)
+                              : "Download failed: HTTP " + String(code);
+    http.end();
+    return false;
+  }
+  const int size = http.getSize();
+  if (size <= 0) {
+    s_upload_error = "Download failed: no image size.";
+    http.end();
+    return false;
+  }
+  s_upload_error = slotSizeError(static_cast<size_t>(size));
+  if (s_upload_error.length() != 0) {
+    http.end();
+    return false;
+  }
+  std::unique_ptr<uint8_t[]> buf(new (std::nothrow) uint8_t[kDownloadChunk]);
+  if (!buf) {
+    s_upload_error = "Not enough memory to download.";
+    http.end();
+    return false;
+  }
+  security::logEvent("download of %s started (%d bytes)", tag, size);
+  if (!beginImage(static_cast<size_t>(size))) {
+    http.end();
+    return false;
+  }
+  WiFiClient* stream = http.getStreamPtr();
+  const size_t total = static_cast<size_t>(size);
+  size_t done = 0;
+  int shown = -1;
+  unsigned long last_data_ms = millis();
+  const unsigned long started_ms = last_data_ms;
+  while (done < total && stream != nullptr) {
+    const size_t want = std::min(kDownloadChunk, total - done);
+    const int n = stream->read(buf.get(), want);
+    if (n > 0) {
+      if (!writeImage(buf.get(), static_cast<size_t>(n))) {
+        break;
+      }
+      done += static_cast<size_t>(n);
+      last_data_ms = millis();
+      const int percent = static_cast<int>(done * 100 / total);
+      if (percent / 5 != shown) {
+        shown = percent / 5;
+        statusScreenFirmwareDownload(percent);
+      }
+      continue;
+    }
+    if (!stream->connected() && stream->available() <= 0) {
+      break;
+    }
+    if (millis() - last_data_ms >= kDownloadStallMs) {
+      break;
+    }
+    wifiPollDuringIo();
+    delay(2);
+  }
+  http.end();
+  Serial.printf("OTA: downloaded %u of %u bytes in %lu ms\n",
+                static_cast<unsigned>(done), static_cast<unsigned>(total),
+                millis() - started_ms);
+  if (s_upload_error.length() != 0) {
+    return false;  // writeImage() failed and aborted
+  }
+  if (done != total) {
+    Update.abort();
+    s_upload_error = "Download stopped after " + String(static_cast<unsigned>(done)) +
+                     " of " + String(static_cast<unsigned>(total)) + " bytes.";
+    return false;
+  }
+  return finishImage(tag);
 }
 
 void attachRoutes() {
@@ -364,6 +574,7 @@ void attachRoutes() {
   web->on("/firmware", HTTP_GET, showFirmwarePage);
   web->on("/firmware-upload", HTTP_POST, handleUploadDone,
           handleUploadChunk);
+  web->on("/update-install", HTTP_POST, handleInstallRequest);
 
   // Claim WiFiManager's legacy unauthenticated paths before it registers them.
   web->on("/update", HTTP_GET, showFirmwarePage);
@@ -413,6 +624,33 @@ bool inProgress() {
   }
   return s_in_progress;
 }
+
+bool installPending() { return s_install_tag[0] != '\0'; }
+
+void runPendingInstall() {
+  if (!installPending()) {
+    return;
+  }
+  char tag[sizeof(s_install_tag)];
+  memcpy(tag, s_install_tag, sizeof(tag));
+  s_install_tag[0] = '\0';
+  s_upload_error.clear();
+  Serial.printf("OTA: installing %s from the release\n", tag);
+  statusScreenFirmwareDownload(0);
+  if (downloadAndInstall(tag)) {
+    Serial.println("OTA: installed, restarting");
+    delay(250);
+    wifiLeaveAndRestart();
+  }
+  if (s_upload_error.length() == 0) {
+    s_upload_error = Update.errorString();
+  }
+  s_install_error = String(tag) + ": " + s_upload_error;
+  Serial.printf("OTA: install failed: %s\n", s_install_error.c_str());
+  logRefusal(s_upload_error.c_str());
+}
+
+const String& installError() { return s_install_error; }
 
 // --- Rollback after a bad update ---
 // The bootloader is built with rollback enabled. A new image boots in

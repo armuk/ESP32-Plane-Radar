@@ -276,6 +276,28 @@ pio device monitor
 - Serial: **115200** baud. A memory line is printed every 60 s: `heap: free … min … largest … (lowest …) stack-free … up …`, and `heap low: N after <step>` whenever the lowest-ever free heap drops (names the request that caused it)
 - USB CDC on boot enabled in `platformio.ini` for the Super Mini
 
+### Build environment
+
+Local builds and CI use the same versions:
+
+| Part | Version | Set in |
+|------|---------|--------|
+| Python | 3.14 | `.github/workflows/*.yml` (`python-version`); locally, the Python behind `~/.platformio/penv` |
+| PlatformIO Core | 6.2.0 | installed with `pip install platformio` |
+| Platform | pioarduino 55.03.312-1 (Arduino-ESP32 3.3.12, ESP-IDF 5.5) | `platformio.ini` (`platform =`) |
+| CI runner | `ubuntu-26.04` | `.github/workflows/*.yml` (`runs-on`) |
+
+The scripts in `scripts/` use the standard library, plus `cryptography` for signing and `pyserial` for the serial tools; the platform installs both into PlatformIO's environment, and the release workflow installs `cryptography` itself. Bump these deliberately, together, and check that a build still gives the same app size.
+
+To move an existing local PlatformIO install to a new Python (here 3.14), keep the old environment until the new one builds:
+
+```bash
+mv ~/.platformio/penv ~/.platformio/penv-old
+python3.14 -m venv ~/.platformio/penv
+~/.platformio/penv/bin/pip install platformio==6.2.0
+~/.platformio/penv/bin/pio run -e supermini    # the platform installs its own Python packages on first run
+```
+
 ### Tests and static analysis
 
 ```bash
@@ -331,7 +353,11 @@ Put the board in download mode (hold **BOOT**, tap **RESET**), then flash with C
 
 ### OTA firmware updates
 
-The firmware uses two 1.875 MB application slots (see [Partition layout](#partition-layout)). Updates can be uploaded without USB:
+The firmware uses two 1.875 MB application slots (see [Partition layout](#partition-layout)).
+
+**From the Status page (release builds):** when the daily check finds a newer release, the Status page shows an **Install vX.Y.Z** button. The radar then downloads that release's signed `-ota.bin` from GitHub itself, checks it exactly like an upload (signature, version, slot size), and restarts. The screen shows the download progress, which takes about a minute, and the page reloads once the radar is back. If anything fails, nothing is installed, the radar carries on, and the Status page says why.
+
+**By upload:** updates can also be uploaded without USB:
 
 1. Open `http://plane-radar.local`
 2. Choose **Firmware update**
@@ -385,7 +411,7 @@ Releases need the `OTA_SIGNING_KEY` repository secret (the PEM private key); the
 See [SECURITY.md](SECURITY.md) for the support period, how to report a vulnerability, every network interface and endpoint, the update signing key, and known limitations.
 
 - **Status** (`/status`, or `/status.json` for scripts): firmware version and build, update key ID, whether an update is waiting to be confirmed, uptime and reset reason, start-up time (Wi‑Fi joined, first aircraft data), heap, Wi‑Fi signal, data-feed health, failed logins. Linked from About; login required.
-- **Update available:** release builds check the GitHub repository they were built from once a day. When a newer release exists, the Status page says so and links to it. Installing it is still up to you, using the signed `-ota.bin` on the Firmware update page.
+- **Update available:** release builds check the GitHub repository they were built from once a day. When a newer release exists, the Status page says so, links to it, and offers an **Install** button. Nothing is installed until you press it, and the downloaded image gets the same signature and version checks as an upload.
 - **Security** (`/security`): the last 24 security events (boots, logins, lockouts, settings changes, updates, resets), kept across restarts but cleared by a power cut. Below that are the key events (updates, rollbacks, password changes, lockouts, blocked cross-site requests, Wi‑Fi erased, factory reset, settings restored), which are kept in flash through power cuts.
 - **Backup & restore** (`/backup`, linked from Status): download the settings as a JSON file, or restore them from one. The file never includes the settings password or Wi‑Fi. It does include your location, so keep it private.
 

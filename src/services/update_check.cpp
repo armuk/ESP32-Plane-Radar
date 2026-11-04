@@ -1,5 +1,7 @@
 #include "services/update_check.h"
 
+#include <cctype>
+#include <cstdio>
 #include <cstring>
 
 #include "services/firmware_image.h"
@@ -28,6 +30,41 @@ bool newerRelease(const char* running, const char* latest) {
   }
   // "running is a downgrade from latest" == latest is newer.
   return firmware_image::isDowngrade(latest, running);
+}
+
+namespace {
+bool onlyChars(const char* text, const char* extra) {
+  for (const char* p = text; *p != '\0'; ++p) {
+    if (!isalnum(static_cast<unsigned char>(*p)) && strchr(extra, *p) == nullptr) {
+      return false;
+    }
+  }
+  return true;
+}
+}  // namespace
+
+bool releaseAssetUrl(const char* repo, const char* tag, char* out, size_t out_len) {
+  firmware_image::Version v;
+  if (repo == nullptr || tag == nullptr || out == nullptr ||
+      !firmware_image::parseVersion(tag, &v) || !onlyChars(tag, ".-_+")) {
+    return false;
+  }
+  // "owner/name": one slash, nothing at either end.
+  const char* slash = strchr(repo, '/');
+  if (slash == nullptr || slash == repo || slash[1] == '\0' ||
+      strchr(slash + 1, '/') != nullptr || !onlyChars(repo, "-_./")) {
+    return false;
+  }
+  const int n = snprintf(nullptr, 0,
+                         "https://github.com/%s/releases/download/%s/plane-radar-%s-ota.bin",
+                         repo, tag, tag);
+  if (n < 0 || static_cast<size_t>(n) >= out_len) {
+    return false;
+  }
+  snprintf(out, out_len,
+           "https://github.com/%s/releases/download/%s/plane-radar-%s-ota.bin",
+           repo, tag, tag);
+  return true;
 }
 
 #ifdef ARDUINO

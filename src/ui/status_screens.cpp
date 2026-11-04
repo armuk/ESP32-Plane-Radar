@@ -271,6 +271,18 @@ void statusScreenWifiReset() {
                 sizeof(lines) / sizeof(lines[0]));
 }
 
+void statusScreenFirmwareDownload(int percent) {
+  char progress[24];
+  snprintf(progress, sizeof(progress), "Downloading %d%%", percent);
+  const TextLine lines[] = {
+      {"Updating firmware", 1.12f, &kPortalGfxTitle},
+      {progress, 1.0f, &kPortalGfxBody},
+      {"Keep power connected", 1.0f, &kPortalGfxBody},
+  };
+  drawTextBlock(config::kColorYellow, config::kTextOnYellow, lines,
+                sizeof(lines) / sizeof(lines[0]));
+}
+
 void statusScreenFirmwareUpdate() {
   const TextLine lines[] = {
       {"Updating firmware", 1.12f, &kPortalGfxTitle},

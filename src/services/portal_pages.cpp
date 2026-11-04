@@ -243,6 +243,9 @@ void fillStatus(JsonDocument& doc) {
   upd["downgrades_refused"] = true;
   upd["awaiting_confirmation"] = services::ota::awaitingConfirmation();
   upd["last_rollback"] = services::ota::rollbackNote();
+  if (services::ota::installError().length() != 0) {
+    upd["install_error"] = services::ota::installError();
+  }
   if (services::updates::enabled()) {
     const char* latest = services::updates::latestTag();
     upd["latest_release"] = latest[0] != '\0' ? latest : nullptr;
@@ -326,8 +329,24 @@ void showStatusPage() {
       body += F("' target='_blank' rel='noopener'>Release notes and "
                 "download</a>.");
     }
-    body += F(" Install the <em>-ota.bin</em> file on the "
-              "<a href='/firmware'>Firmware update</a> page.</div>");
+    // The tag only holds [A-Za-z0-9.-_+] (update_check.cpp).
+    const char* tag = services::updates::latestTag();
+    body += F("<form method='post' action='/update-install' "
+              "onsubmit=\"return confirm('Download and install ");
+    body += tag;
+    body += F(", then restart?')\"><input type='hidden' name='tag' value='");
+    body += tag;
+    body += F("'><button type='submit'>Install ");
+    body += tag;
+    body += F("</button></form><small>The radar downloads the signed "
+              "<em>-ota.bin</em> from the release and checks it like an "
+              "upload on the <a href='/firmware'>Firmware update</a> page.</small>"
+              "</div>");
+  }
+  if (services::ota::installError().length() != 0) {
+    body += F("<div class='msg D'><strong>Install failed:</strong> ");
+    htmlEscapeInto(body, services::ota::installError());
+    body += F("</div>");
   }
   for (JsonPair section : doc.as<JsonObject>()) {
     body += F("<h3>");
