@@ -318,30 +318,26 @@ void showStatusPage() {
   body.reserve(2600);
   body += F("<h1>Status</h1>");
   if (services::updates::updateAvailable()) {
-    body += F("<div class='msg S'><strong>Update available: ");
-    htmlEscapeInto(body, services::updates::latestTag());
-    body += F("</strong> (running ");
-    htmlEscapeInto(body, config::kFirmwareVersion);
-    body += F(").");
-    if (services::updates::releasePage()[0] != '\0') {
-      body += F(" <a href='");
-      body += services::updates::releasePage();  // checked: no quotes or <>
-      body += F("' target='_blank' rel='noopener'>Release notes and "
-                "download</a>.");
-    }
     // The tag only holds [A-Za-z0-9.-_+] (update_check.cpp).
     const char* tag = services::updates::latestTag();
-    body += F("<form method='post' action='/update-install' "
+    body += F("<div class='msg S upd'><div><strong>Update available: ");
+    body += tag;
+    body += F("</strong><small>Running ");
+    htmlEscapeInto(body, config::kFirmwareVersion);
+    if (services::updates::releasePage()[0] != '\0') {
+      body += F(" &middot; <a href='");
+      body += services::updates::releasePage();  // checked: no quotes or <>
+      body += F("' target='_blank' rel='noopener'>Release notes</a>");
+    }
+    body += F("</small></div><form method='post' action='/update-install' "
               "onsubmit=\"return confirm('Download and install ");
     body += tag;
     body += F(", then restart?')\"><input type='hidden' name='tag' value='");
     body += tag;
-    body += F("'><button type='submit'>Install ");
-    body += tag;
-    body += F("</button></form><small>The radar downloads the signed "
-              "<em>-ota.bin</em> from the release and checks it like an "
-              "upload on the <a href='/firmware'>Firmware update</a> page.</small>"
-              "</div>");
+    body += F("'><button type='submit'>Install</button></form><p>Downloads "
+              "the signed image from the release and checks it like an upload "
+              "on the <a href='/firmware'>Firmware update</a> page. Restarts "
+              "when done.</p></div>");
   }
   if (services::ota::installError().length() != 0) {
     body += F("<div class='msg D'><strong>Install failed:</strong> ");

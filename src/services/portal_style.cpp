@@ -34,9 +34,16 @@ namespace {
   "dd{color:#eef6ff;margin:0 0 .6rem;padding:0}"                             \
   "label{color:#d6e4f5}"                                                     \
   ".msg{background:#0b1728;border:1px solid #274464;border-left-width:5px;"  \
-  "border-radius:8px}"                                                       \
+  "border-radius:8px;padding:.75rem 1rem;margin:.75rem 0 1rem;"             \
+  "line-height:1.45}"                                                        \
   ".msg.S{border-left-color:#4cc27a}.msg.D{border-left-color:#d9483b}"       \
   ".msg.P{border-left-color:#2b8aef}"                                        \
+  /* Status page "Update available": text left, button right (wraps). */ \
+  ".upd{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem 1rem}"     \
+  ".upd>div{flex:1 1 12rem}.upd small{display:block}"                       \
+  ".upd button{width:auto;margin:0;padding:0 1.4rem;line-height:2.4rem}"    \
+  ".upd p{flex-basis:100%;margin:0;padding-top:.6rem;"                      \
+  "border-top:1px solid #274464;font-size:.85rem;color:#a9bad0}"            \
   ".q[role=img]{filter:invert(1)}"                                           \
   "input,select,button{box-sizing:border-box;width:100%}"                   \
   "input[type=checkbox],input[type=radio]{width:auto}"                      \

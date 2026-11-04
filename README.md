@@ -355,7 +355,7 @@ Put the board in download mode (hold **BOOT**, tap **RESET**), then flash with C
 
 The firmware uses two 1.875 MB application slots (see [Partition layout](#partition-layout)).
 
-**From the Status page (release builds):** when the daily check finds a newer release, the Status page shows an **Install vX.Y.Z** button. The radar then downloads that release's signed `-ota.bin` from GitHub itself, checks it exactly like an upload (signature, version, slot size), and restarts. The screen shows the download progress, which takes about a minute, and the page reloads once the radar is back. If anything fails, nothing is installed, the radar carries on, and the Status page says why.
+**From the Status page (release builds):** when the daily check finds a newer release, the Status page shows an **Install** button. The radar then downloads that release's signed `-ota.bin` from GitHub itself, checks it exactly like an upload (signature, version, slot size), and restarts. The screen shows the download progress, which takes about a minute, and the page reloads once the radar is back. If anything fails, nothing is installed, the radar carries on, and the Status page says why.
 
 **By upload:** updates can also be uploaded without USB:
 
