@@ -413,7 +413,7 @@ See [SECURITY.md](SECURITY.md) for the support period, how to report a vulnerabi
 - **Status** (`/status`, or `/status.json` for scripts): firmware version and build, update key ID, whether an update is waiting to be confirmed, uptime and reset reason, start-up time (Wi‑Fi joined, first aircraft data), heap, Wi‑Fi signal, data-feed health, failed logins. Linked from About; login required.
 - **Update available:** release builds check the GitHub repository they were built from once a day. When a newer release exists, the Status page says so, links to it, and offers an **Install** button. Nothing is installed until you press it, and the downloaded image gets the same signature and version checks as an upload.
 - **Security** (`/security`): the last 24 security events (boots, logins, lockouts, settings changes, updates, resets), kept across restarts but cleared by a power cut. Below that are the key events (updates, rollbacks, password changes, lockouts, blocked cross-site requests, Wi‑Fi erased, factory reset, settings restored), which are kept in flash through power cuts.
-- **Backup & restore** (`/backup`, linked from Status): download the settings as a JSON file, or restore them from one. The file never includes the settings password or Wi‑Fi. It does include your location, so keep it private.
+- **Backup & restore** (`/backup`, linked from Status): download the settings as a JSON file, or restore them from one. The file never includes the settings password or Wi‑Fi. It does include your location, so keep it private. Backups made with v2.2.0 or older are damaged and are refused; download a new one.
 
 ## Dependencies
 

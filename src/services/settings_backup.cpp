@@ -36,12 +36,30 @@ int hexDigit(char c) {
 
 }  // namespace
 
+bool plainKey(const char* key) {
+  if (key == nullptr || key[0] == '\0' || strlen(key) > kMaxKeyLen) {
+    return false;
+  }
+  for (const char* p = key; *p != '\0'; ++p) {
+    const char c = *p;
+    const bool plain = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+                       (c >= '0' && c <= '9') || c == '_';
+    if (!plain) {
+      return false;
+    }
+  }
+  return true;
+}
+
 bool keyAllowed(const char* ns, const char* key) {
   if (ns == nullptr || key == nullptr) {
     return false;
   }
   const size_t key_len = strlen(key);
   if (key_len == 0 || key_len > kMaxKeyLen) {
+    return false;
+  }
+  if (!plainKey(key)) {
     return false;
   }
   bool ns_ok = false;
@@ -162,12 +180,16 @@ namespace {
 /** Adds one NVS entry to obj; skips types the firmware never stores. */
 void exportEntry(nvs_handle_t h, const nvs_entry_info_t& info,
                  JsonObject obj) {
+  // info.key is a const char[16]: ArduinoJson takes a const char array for a
+  // string literal and keeps only the pointer, so the key read back as
+  // whatever later reused that stack memory. A plain pointer is copied.
+  const char* key = info.key;
   switch (info.type) {
 #define PR_EXPORT_INT(nvs_type, c_type, getter, name) \
   case nvs_type: {                                    \
     c_type v = 0;                                     \
-    if (getter(h, info.key, &v) == ESP_OK) {          \
-      obj[info.key].to<JsonObject>()[name] = v;       \
+    if (getter(h, key, &v) == ESP_OK) {          \
+      obj[key].to<JsonObject>()[name] = v;       \
     }                                                 \
     return;                                           \
   }
@@ -181,18 +203,18 @@ void exportEntry(nvs_handle_t h, const nvs_entry_info_t& info,
     case NVS_TYPE_STR: {
       char text[kMaxStringLen + 1];
       size_t len = sizeof(text);
-      if (nvs_get_str(h, info.key, text, &len) == ESP_OK) {
-        obj[info.key].to<JsonObject>()["str"] = text;
+      if (nvs_get_str(h, key, text, &len) == ESP_OK) {
+        obj[key].to<JsonObject>()["str"] = text;
       }
       return;
     }
     case NVS_TYPE_BLOB: {
       uint8_t data[kMaxBlobLen];
       size_t len = sizeof(data);
-      if (nvs_get_blob(h, info.key, data, &len) == ESP_OK) {
+      if (nvs_get_blob(h, key, data, &len) == ESP_OK) {
         char hex[2 * kMaxBlobLen + 1];
         toHex(data, len, hex);
-        obj[info.key].to<JsonObject>()["blob"] = hex;
+        obj[key].to<JsonObject>()["blob"] = hex;
       }
       return;
     }
@@ -242,6 +264,41 @@ void exportSettings(JsonDocument& doc) {
   }
 }
 
+int removeOddKeys() {
+  int removed = 0;
+  for (const char* ns : kNamespaces) {
+    nvs_handle_t h;
+    if (nvs_open(ns, NVS_READWRITE, &h) != ESP_OK) {
+      continue;
+    }
+    // Collect first, then erase: the iterator must not see changes.
+    constexpr int kMaxOdd = 8;
+    char odd[kMaxOdd][NVS_KEY_NAME_MAX_SIZE];
+    int n = 0;
+    nvs_iterator_t it = nullptr;
+    esp_err_t res = nvs_entry_find(NVS_DEFAULT_PART_NAME, ns, NVS_TYPE_ANY, &it);
+    while (res == ESP_OK && n < kMaxOdd) {
+      nvs_entry_info_t info;
+      nvs_entry_info(it, &info);
+      if (!plainKey(info.key)) {
+        memcpy(odd[n++], info.key, sizeof(odd[0]));
+      }
+      res = nvs_entry_next(&it);
+    }
+    nvs_release_iterator(it);
+    for (int i = 0; i < n; ++i) {
+      if (nvs_erase_key(h, odd[i]) == ESP_OK) {
+        ++removed;
+      }
+    }
+    if (n > 0) {
+      nvs_commit(h);
+    }
+    nvs_close(h);
+  }
+  return removed;
+}
+
 int importSettings(const JsonDocument& doc, const char*& error) {
   if (!checkHeader(doc, error)) {
     return -1;
@@ -258,6 +315,13 @@ int importSettings(const JsonDocument& doc, const char*& error) {
     for (JsonPairConst kv : entries) {
       Value v;
       if (!parseValue(kv.value(), v, error)) {
+        return -1;
+      }
+      // Backups from v2.1.0-v2.2.0 have garbled names: refuse the file
+      // rather than store junk under them.
+      if (!plainKey(kv.key().c_str())) {
+        error = "the backup's setting names are damaged (a v2.2.0 or older "
+                "backup); download a new backup";
         return -1;
       }
     }

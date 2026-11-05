@@ -21,6 +21,7 @@
 #include "services/radar_location.h"
 #include "services/net_dns.h"
 #include "services/security.h"
+#include "services/settings_backup.h"
 #include "services/update_check.h"
 #include "services/weather_time.h"
 #include "services/wifi_setup.h"
@@ -365,6 +366,10 @@ void setup() {
   services::security::begin();
   logBootReason();
   services::ota::checkBootImage();
+  if (const int removed = services::backup::removeOddKeys(); removed > 0) {
+    services::security::logEvent("removed %d damaged setting(s) left by a restore",
+                                 removed);
+  }
 
   bootButtonInit();
   displayInit();

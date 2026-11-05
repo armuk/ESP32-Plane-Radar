@@ -264,6 +264,12 @@ Measured against the NCSC [device security principles for manufacturers](https:/
 - **Not done: smaller TLS buffers.** The core allocates two 16 KB TLS buffers per connection (`MBEDTLS_SSL_MAX_CONTENT_LEN=16384`). A 4 KB send buffer, plus a 4 KB esp_timer stack, would save about 12.5 KB per request and 4 KB permanently, but only through pioarduino's `custom_sdkconfig`. That rebuilds the shared `framework-arduinoespressif32-libs` package in `~/.platformio`, so other projects reinstall it, and CI rebuilds it on every run. It is kept in reserve for a feature that needs the memory.
 - Also considered and not done: a 4-bit frame or drawing in strips (29–43 KB permanently, at the cost of colours or about twice the drawing time); trimming the aircraft list or route cache (a few KB, changes behaviour); portal page buffers (they never coincide with a request).
 
+### [x] T13. Settings backups had garbled names (2026-11-05)
+- **Symptom:** a restore reported "3 values" and changed nothing. Every key in the downloaded file was the same 15 bytes of garbage (`��BassNew`), so the backup was unusable. Affects every release up to v2.2.0.
+- **Cause** ([settings_backup.cpp](src/services/settings_backup.cpp)): the export used `nvs_entry_info_t::key`, a `const char[16]`, as the JSON key. ArduinoJson 7 takes a const char array for a string literal and stores only the pointer, so the key was read back after that stack memory had been reused. A plain `const char*` is copied.
+- **Fix:** keys are passed as pointers, so they are copied. Restore now refuses a file whose names are not plain (`[A-Za-z0-9_]`), so an old backup changes nothing, with a message to download a new one. At boot, `removeOddKeys()` erases such junk keys left by an earlier restore, and logs it.
+- **Verified on the device:** the 3 junk keys were removed at boot; a new backup held all 28 settings with their names, and restoring it brought back a changed setting (28 values written).
+
 ## Reliability and tooling (2026-11-03)
 
 ### [x] R1. Self-recovery restart

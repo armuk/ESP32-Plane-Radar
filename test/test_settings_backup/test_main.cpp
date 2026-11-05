@@ -22,6 +22,12 @@ void test_keys() {
   TEST_ASSERT_FALSE(keyAllowed("wifi", "portal"));
   TEST_ASSERT_FALSE(keyAllowed("display", ""));
   TEST_ASSERT_FALSE(keyAllowed("display", "a-key-longer-than-15"));
+  // Only plain names: a garbled key from a damaged backup is refused.
+  TEST_ASSERT_TRUE(keyAllowed("display", "night_From2"));
+  TEST_ASSERT_FALSE(keyAllowed("display", "\xff\xff" "BassNew"));
+  TEST_ASSERT_FALSE(keyAllowed("display", "font.pct"));
+  TEST_ASSERT_FALSE(keyAllowed("display", "font pct"));
+  TEST_ASSERT_FALSE(plainKey(nullptr));
 }
 
 static bool parse(const char* json, Value& v, const char*& err) {

@@ -40,7 +40,10 @@ struct Value {
   size_t blob_len;
 };
 
-/** True for a namespace and key a backup may hold (no passwords). */
+/** A plain NVS key name, like the firmware's own: [A-Za-z0-9_], 1-15 long. */
+bool plainKey(const char* key);
+
+/** True for a namespace and key a backup may hold (plain name, no passwords). */
 bool keyAllowed(const char* ns, const char* key);
 
 /** JSON type name for a value type ("u8", "str", ...). */
@@ -67,6 +70,13 @@ void exportSettings(JsonDocument& doc);
  * or -1 with error set when the file is unusable (nothing written then).
  */
 int importSettings(const JsonDocument& doc, const char*& error);
+
+/**
+ * Erases keys in the backup namespaces that are not plain names: the junk
+ * that restoring a v2.1.0-v2.2.0 backup wrote (its key names were garbled).
+ * Returns how many were removed. Run once at boot.
+ */
+int removeOddKeys();
 #endif
 
 }  // namespace services::backup
