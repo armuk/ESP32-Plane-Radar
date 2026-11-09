@@ -1,4 +1,8 @@
-# Tag a release (v1.0.0) to attach firmware to GitHub Releases.
+# Tag a release (v1.0.0) to attach the C3 Super Mini firmware to GitHub
+# Releases. Only plain "v*" tags release here: other boards will use their
+# own prefixed tags (s3-v*, p4-v*) and workflows. Radars in the field check
+# "releases/latest" for plane-radar-<tag>-ota.bin, so these releases keep
+# that name and are the ones marked Latest.
 name: Release
 
 on:
@@ -13,6 +17,9 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-26.04  # pinned like the toolchain; bump deliberately
+    defaults:
+      run:
+        working-directory: firmware/c3-supermini
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -23,10 +30,10 @@ jobs:
           path: |
             ~/.cache/pip
             ~/.platformio/.cache
-            .pio/libdeps
-          key: ${{ runner.os }}-pio-${{ hashFiles('platformio.ini') }}
+            firmware/c3-supermini/.pio/libdeps
+          key: ${{ runner.os }}-pio-c3-supermini-${{ hashFiles('firmware/c3-supermini/platformio.ini') }}
           restore-keys: |
-            ${{ runner.os }}-pio-
+            ${{ runner.os }}-pio-c3-supermini-
 
       - name: Set up Python
         uses: actions/setup-python@v7
@@ -100,7 +107,8 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v3
         with:
-          files: dist/*
+          files: firmware/c3-supermini/dist/*
           generate_release_notes: true
+          make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -2,6 +2,8 @@
 
 This page covers how Plane Radar protects itself and its owner's network, what it does not protect against, how long it gets security fixes, and how to report a problem. It follows the UK NCSC [device security principles for manufacturers](https://www.ncsc.gov.uk/collection/device-security-principles-for-manufacturers).
 
+It describes the released board, the **ESP32-C3 Super Mini** ([`firmware/c3-supermini`](firmware/c3-supermini)); file paths below are relative to that folder. The S3 and P4 ports in [`firmware/`](firmware) are not released and are not covered until they are.
+
 ## Support period
 
 > **Draft — the maintainer has not yet confirmed these dates.**
@@ -20,7 +22,7 @@ Report it privately through this repository's **Security** tab → **Report a vu
 
 > **Draft:** the maintainer aims to acknowledge a report within 7 days and to agree a disclosure date with the reporter; fixes are credited in the release notes unless the reporter prefers otherwise.
 
-Useful details: firmware version (from the **Status** or **About** page), what you did, and what happened. If the device crashed, include the decoded crash dump from `scripts/read_coredump.py` (see the README).
+Useful details: firmware version (from the **Status** or **About** page), what you did, and what happened. If the device crashed, include the decoded crash dump from `scripts/read_coredump.py` (see the [C3 README](firmware/c3-supermini/README.md)).
 
 ## What is protected
 
@@ -137,7 +139,7 @@ In the project:
 | | |
 |---|---|
 | Algorithm | ECDSA P‑256, SHA‑256 (Arduino-ESP32 `Update` library format: image + DER signature padded to 512 bytes) |
-| Public key | [`keys/ota-signing-public.pem`](keys/ota-signing-public.pem), built into every firmware |
+| Public key | [`keys/ota-signing-public.pem`](firmware/c3-supermini/keys/ota-signing-public.pem), built into every firmware |
 | Key ID | `ddf80943b6ae45e6` (first 16 hex digits of the SHA‑256 of the PEM file; shown on the device's **Status** page) |
 | Private key | Never stored in the repository. Release builds use the `OTA_SIGNING_KEY` GitHub Actions secret. The maintainer's local copy is kept outside the project directory, readable only by the owner. |
 

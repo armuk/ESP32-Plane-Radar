@@ -1,4 +1,5 @@
-# Build firmware on push/PR; upload binaries as a short-lived artifact.
+# Build every board's firmware on push/PR; upload binaries as short-lived
+# artifacts. Each board lives in its own folder under firmware/.
 name: Build
 
 on:
@@ -14,6 +15,19 @@ concurrency:
 jobs:
   firmware:
     runs-on: ubuntu-26.04  # pinned like the toolchain; bump deliberately
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - board: c3-supermini   # released board (tags v*)
+            env: supermini
+          - board: s3             # port in progress (tags s3-v*)
+            env: s3
+          - board: p4             # port in progress (tags p4-v*)
+            env: p4
+    defaults:
+      run:
+        working-directory: firmware/${{ matrix.board }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -24,10 +38,10 @@ jobs:
           path: |
             ~/.cache/pip
             ~/.platformio/.cache
-            .pio/libdeps
-          key: ${{ runner.os }}-pio-${{ hashFiles('platformio.ini') }}
+            firmware/${{ matrix.board }}/.pio/libdeps
+          key: ${{ runner.os }}-pio-${{ matrix.board }}-${{ hashFiles(format('firmware/{0}/platformio.ini', matrix.board)) }}
           restore-keys: |
-            ${{ runner.os }}-pio-
+            ${{ runner.os }}-pio-${{ matrix.board }}-
 
       - name: Set up Python
         uses: actions/setup-python@v7
@@ -41,27 +55,27 @@ jobs:
         run: pio test -e native
 
       - name: Static analysis
-        run: pio check -e supermini --fail-on-defect=low
+        run: pio check -e ${{ matrix.env }} --fail-on-defect=low
 
       - name: Build
-        run: pio run -e supermini
+        run: pio run -e ${{ matrix.env }}
 
       - name: Merge web-flash image
-        run: pio run -t merge -e supermini
+        run: pio run -t merge -e ${{ matrix.env }}
 
       # Branch and PR builds are not signed (see release.yml), so devices
       # refuse them over the air; flash them over USB to test.
       - name: Software bill of materials
-        run: python scripts/make_sbom.py --version "${GITHUB_SHA::7}" --out .pio/build/supermini/sbom.cdx.json
+        run: python scripts/make_sbom.py --version "${GITHUB_SHA::7}" --out .pio/build/${{ matrix.env }}/sbom.cdx.json
 
       - name: Upload firmware artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: plane-radar-supermini
+          name: plane-radar-${{ matrix.board }}
           if-no-files-found: error
           path: |
-            .pio/build/supermini/firmware-merged.bin
-            .pio/build/supermini/firmware.bin
-            .pio/build/supermini/bootloader.bin
-            .pio/build/supermini/partitions.bin
-            .pio/build/supermini/sbom.cdx.json
+            firmware/${{ matrix.board }}/.pio/build/${{ matrix.env }}/firmware-merged.bin
+            firmware/${{ matrix.board }}/.pio/build/${{ matrix.env }}/firmware.bin
+            firmware/${{ matrix.board }}/.pio/build/${{ matrix.env }}/bootloader.bin
+            firmware/${{ matrix.board }}/.pio/build/${{ matrix.env }}/partitions.bin
+            firmware/${{ matrix.board }}/.pio/build/${{ matrix.env }}/sbom.cdx.json
