@@ -19,7 +19,8 @@ The ribbons are short:
 | IO board (J46) | 44 mm | |
 
 None of them can reach a board placed beside the Echo. So each socket sits where the original does, with
-its ribbon-facing edge at the original's position. The positions were measured from two photos
+its ribbon-facing edge at the original's position. To work with the board outside the case, use the
+[ribbon extenders](../ribbon-extenders/README.md). The positions were measured from two photos
 (±0.3 mm across, ±0.8 mm down; see "Positions from the photos" in ECHO-SHOW-5.md).
 
 ## What's on it

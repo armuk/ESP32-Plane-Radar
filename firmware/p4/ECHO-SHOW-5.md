@@ -726,6 +726,14 @@ The touch bus reaches J30 through jumper wires (a patch field). J30 isn't mapped
 costs a wire, not a board. The board is for unpowered mapping and for running the touch ribbon, buttons
 and LEDs from the ESP32. **Never connect the Echo's power adapter while it's fitted.**
 
+#### Ribbon extenders
+
+[ribbon-extenders/](ribbon-extenders/README.md) has 2-layer flex cables that add about 100 mm to J44,
+J46 and J100, so the breakout can sit on the bench. Each has an FH26W socket at one end and contacts
+to Hirose's FH26 FPC spec at the other, and keeps the Echo pin order. J30 uses an off-the-shelf 8-pin,
+0.5 mm extension board and a same-side (type A) FFC cable. The extenders aren't impedance-controlled,
+so DSI through the J44 extender is the least certain part.
+
 ### Later, for the bench prototype
 
 | Item | Spec |
