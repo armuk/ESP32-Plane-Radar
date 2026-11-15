@@ -11,6 +11,8 @@ pio test -e native            # host unit tests
 pio check -e p4               # cppcheck
 ```
 
+A second target is being researched: the case and 5.5" 960x480 screen of an Echo Show 5 (2nd gen), driven by an ESP32-P4. Findings and measurements so far: [ECHO-SHOW-5.md](ECHO-SHOW-5.md).
+
 ## Porting checklist
 
 - [ ] **Board definition:** confirm the chip revision on the board (`esp32-p4` for early silicon, `esp32-p4_r3` for revision 3) and the flash and PSRAM settings.
