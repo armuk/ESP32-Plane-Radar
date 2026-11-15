@@ -96,8 +96,8 @@
       (place U1B 78500 -57240 front 90 (PN PinSocket_1x08_P2.54mm_Vertical))
       (place U1A 78500 -42000 front 90 (PN PinSocket_1x08_P2.54mm_Vertical))
     )
-    (component PinHeader_1x06_P2.54mm_Vertical
-      (place P5 26650 -42000 front 90 (PN PinHeader_1x06_P2.54mm_Vertical))
+    (component PinHeader_1x07_P2.54mm_Vertical
+      (place P5 25380 -42000 front 90 (PN PinHeader_1x07_P2.54mm_Vertical))
     )
     (component "Hirose_FH12-8S-0.5SH_1x08-1MP_P0.50mm_Horizontal"
       (place J30 19825 -53800 front -90 (PN "FH12-8S-0.5SH(55)"))
@@ -168,10 +168,10 @@
             0 2200  287.158 2181.18  569.402 2125.04  841.904 2032.54  1100 1905.26
             1339.28 1745.38  1555.63 1555.63  1745.38 1339.28  1905.26 1100
             2032.54 841.904  2125.04 569.402  2181.18 287.158  2200 0))
-      (keepout "" (circle F.Cu 2700))
-      (keepout "" (circle In1.Cu 2700))
-      (keepout "" (circle In2.Cu 2700))
-      (keepout "" (circle B.Cu 2700))
+      (keepout "" (circle F.Cu 3100))
+      (keepout "" (circle In1.Cu 3100))
+      (keepout "" (circle In2.Cu 3100))
+      (keepout "" (circle B.Cu 3100))
     )
     (image PinHeader_1x02_P2.54mm_Vertical
       (outline (polygon signal 0  -1765 -4315  -1765 1765  1765 1765  1765 -4315))
@@ -359,25 +359,26 @@
       (pin Round[A]Pad_1700.000000_um 7 0 -15240)
       (pin Round[A]Pad_1700.000000_um 8 0 -17780)
     )
-    (image PinHeader_1x06_P2.54mm_Vertical
-      (outline (polygon signal 0  -1765 -14465  -1765 1765  1765 1765  1765 -14465))
+    (image PinHeader_1x07_P2.54mm_Vertical
+      (outline (polygon signal 0  -1765 -17015  -1765 1775  1765 1775  1765 -17015))
       (outline (path signal 120  -1380 1380  0 1380))
       (outline (path signal 120  -1380 0  -1380 1380))
-      (outline (path signal 120  -1380 -1270  -1380 -14080))
+      (outline (path signal 120  -1380 -1270  -1380 -16620))
       (outline (path signal 120  -1380 -1270  1380 -1270))
-      (outline (path signal 120  -1380 -14080  1380 -14080))
-      (outline (path signal 120  1380 -1270  1380 -14080))
+      (outline (path signal 120  -1380 -16620  1380 -16620))
+      (outline (path signal 120  1380 -1270  1380 -16620))
       (outline (path signal 100  -1270 635  -635 1270))
-      (outline (path signal 100  -1270 -13970  -1270 635))
+      (outline (path signal 100  -1270 -16510  -1270 635))
       (outline (path signal 100  -635 1270  1270 1270))
-      (outline (path signal 100  1270 1270  1270 -13970))
-      (outline (path signal 100  1270 -13970  -1270 -13970))
+      (outline (path signal 100  1270 1270  1270 -16510))
+      (outline (path signal 100  1270 -16510  -1270 -16510))
       (pin Rect[A]Pad_1700.000000x1700.000000_um 1 0 0)
       (pin Round[A]Pad_1700.000000_um 2 0 -2540)
       (pin Round[A]Pad_1700.000000_um 3 0 -5080)
       (pin Round[A]Pad_1700.000000_um 4 0 -7620)
       (pin Round[A]Pad_1700.000000_um 5 0 -10160)
       (pin Round[A]Pad_1700.000000_um 6 0 -12700)
+      (pin Round[A]Pad_1700.000000_um 7 0 -15240)
     )
     (image "Hirose_FH12-8S-0.5SH_1x08-1MP_P0.50mm_Horizontal"
       (outline (polygon signal 0  5045 2995  5045 -4895  -5045 -4895  -5045 2995))
@@ -1032,7 +1033,7 @@
       (pins P1-1 J44-33)
     )
     (net GND
-      (pins TP2-1 TP1-1 D1-1 C2-2 C1-2 P6-2 U1B-2 P5-2 J30-MP J30-MP@1 P2-32 J46-MP
+      (pins TP2-1 TP1-1 D1-1 C2-2 C1-2 P6-2 U1A-2 P5-3 J30-MP J30-MP@1 P2-32 J46-MP
         J46-MP@1 P3-24 J100-MP J100-MP@1 P1-34 J44-MP J44-MP@1)
     )
     (net J100_23
@@ -1222,64 +1223,64 @@
       (pins P4-8 J30-8)
     )
     (net T_VDD
-      (pins JP2-2 JP1-2 C1-1 R2-1 Q1-3 P5-1)
+      (pins JP2-2 JP1-2 C1-1 R2-1 Q1-3 P5-1 P5-2)
     )
     (net T_SDA
-      (pins R7-1 R3-2 P5-3)
+      (pins R7-1 R3-2 P5-4)
     )
     (net T_SCL
-      (pins R8-1 R4-2 P5-4)
+      (pins R8-1 R4-2 P5-5)
     )
     (net T_INT
-      (pins R5-2 P5-5)
+      (pins R5-2 P5-6)
     )
     (net T_RST
-      (pins R6-2 P5-6)
-    )
-    (net IO5
-      (pins R3-1 P6-4 U1A-1)
-    )
-    (net IO6
-      (pins R4-1 P6-5 U1A-2)
-    )
-    (net IO7
-      (pins R5-1 P6-6 U1A-3)
-    )
-    (net IO8
-      (pins P7-5 U1A-4)
-    )
-    (net IO9
-      (pins P7-6 U1A-5)
-    )
-    (net IO10
-      (pins R6-1 P6-7 U1A-6)
-    )
-    (net IO20
-      (pins P7-7 U1A-7)
-    )
-    (net IO21
-      (pins P7-8 U1A-8)
+      (pins R6-2 P5-7)
     )
     (net +5V
-      (pins P6-8 U1B-1)
+      (pins P6-8 U1A-1)
     )
     (net +3V3
-      (pins C2-1 R1-2 Q1-2 P6-1 U1B-3)
+      (pins C2-1 R1-2 Q1-2 P6-1 U1A-3)
     )
     (net IO4
-      (pins R1-1 Q1-1 P6-3 U1B-4)
+      (pins R1-1 Q1-1 P6-3 U1A-4)
     )
     (net IO3
-      (pins P7-4 U1B-5)
+      (pins P7-4 U1A-5)
     )
     (net IO2
-      (pins P7-3 U1B-6)
+      (pins P7-3 U1A-6)
     )
     (net IO1
-      (pins P7-2 U1B-7)
+      (pins P7-2 U1A-7)
     )
     (net IO0
-      (pins P7-1 U1B-8)
+      (pins P7-1 U1A-8)
+    )
+    (net IO5
+      (pins R3-1 P6-4 U1B-1)
+    )
+    (net IO6
+      (pins R4-1 P6-5 U1B-2)
+    )
+    (net IO7
+      (pins R5-1 P6-6 U1B-3)
+    )
+    (net IO8
+      (pins P7-5 U1B-4)
+    )
+    (net IO9
+      (pins P7-6 U1B-5)
+    )
+    (net IO10
+      (pins R6-1 P6-7 U1B-6)
+    )
+    (net IO20
+      (pins P7-7 U1B-7)
+    )
+    (net IO21
+      (pins P7-8 U1B-8)
     )
     (net LED_A
       (pins D1-2 R2-2)

@@ -232,7 +232,9 @@ capacitor and a **0 Ω link** (marked `0`).
 | D18 | `14A` | Diode in an SMA/SMF-style package: probably the boost's Schottky rectifier *(unconfirmed)* |
 | R335, R336 | `01X` or `10X` (EIA-96, read upside down) | **10.0 Ω** (`01X`) or 12.4 Ω (`10X`). Probably the LED current-sense resistors. Many white-LED boost controllers regulate to 0.2 V at the sense pin: 0.2 V ÷ 10 Ω = **20 mA per LED string**, the usual figure *(unconfirmed: needs the controller's part number, or measure the LED current)* |
 
-**J30 (touch):** single row of 8 legs, **pin 1 on the right, 8 on the left** (silkscreen). Every line
+**J30 (touch):** single row of 8 legs, **pin 1 on the right, 8 on the left** (silkscreen, as
+photographed: socket legs towards the camera's bottom). In the board frame used under "Positions from the
+photos" that is **pin 1 at the top end (towards J44) and 8 at the bottom end (nearest screw S4)**. Every line
 passes a small passive in front of the socket (series resistors or filter capacitors). Nearby **U1918** is
 a 4-ball chip-scale part, possibly the touch layer's supply regulator *(unconfirmed)*.
 
@@ -707,19 +709,24 @@ anything else: J44 17.5 mm, J30 about the same, J100 23 mm, J46 44 mm. Socket po
 | J30 | Hirose FH12-8S-0.5SH (C597995) | 1 × 8 |
 | Speaker (J2) | Molex PicoBlade 53261-0271 (C177225) | 1 × 2 |
 
-Header pin numbers are the **Echo's** pin numbers (mainboard silkscreen pin 1) for J44, J46 and J100.
-J30 has no pin 1 mark, so its header uses the socket's numbering.
+Header pin numbers are the **Echo's** pin numbers (mainboard silkscreen pin 1) on every header,
+J30 included.
 
 The J100 socket was **out of stock** at LCSC on 2026-11-15: pre-order it, or fit it by hand.
 
 It also carries:
-- an ESP32-C3 SuperMini socket (USB pointing left, into the board), plus an EXT header for any other
-  ESP32
+- an ESP32-C3 SuperMini socket (component side up, USB pointing left, into the board), plus an EXT
+  header for any other ESP32
 - a switched touch supply (P-MOSFET on IO4, with an LED)
 - 220 Ω series resistors and 2.2 kΩ pull-ups (to the switched supply) on the touch I²C, INT and RST
+- two `T_VDD` pins on the touch bus, for the touch side's two rails (3.3 V only; a 3.0 V rail, if needed,
+  comes from a bench supply)
 
 Notes:
+- The screw holes are 2.6 mm, for slack on the photo-measured positions. Caliper-check them first
+  (method in the breakout README).
 - Screw S4 clears J30's pins by only about 0.5 mm; leave it out if the head touches.
+- While the touch supply is off, firmware must keep SDA, SCL, INT and RST low or high-impedance.
 - The back faces the screen's metal shield: trim the pins and tape it.
 
 The touch bus reaches J30 through jumper wires (a patch field). J30 isn't mapped yet, so a wrong guess

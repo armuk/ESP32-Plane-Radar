@@ -34,23 +34,28 @@ its ribbon-facing edge at the original's position. To work with the board outsid
 | **J2** speaker | Molex PicoBlade 53261-0271 (C177225) | Top edge at x = 82.4, as on the mainboard | P8, 1 × 2 |
 
 How to read the headers:
-- **Header pin n = Echo pin n** for J44, J100 and J46, using the mainboard's own silkscreen pin 1 (J44:
-  top end; J100 and J46: right-hand end). Each header's last pin is GND.
-- **J30's pin 1 isn't marked** on the mainboard, so P4 uses the socket's own numbering.
+- **Header pin n = Echo pin n** on every header, using the mainboard's own silkscreen pin 1:
+  - J44 and J30: top end. On J30, 8 is at the bottom, nearest screw S4.
+  - J100 and J46: right-hand end.
+- The 2-row headers (J44, J100, J46) end with an extra GND pin.
 
 **Mounting:**
-- Six 2.2 mm holes at the original screw positions, assumed M2. Check that a screw fits a hole on the
-  old mainboard before ordering.
+- Six plain 2.6 mm holes at the original screw positions, assumed M2. They're larger than an M2
+  clearance hole (2.2 mm) to absorb the photo error; an M2 pan head (3.8 mm) still covers them.
+- **Measure before ordering** (see below): the positions come from photos.
 - Screw S4 (bottom, beside J30) is only 1.9 mm from the edge. Its head clears J30's pins by about
   0.5 mm, so leave that screw out if it touches.
 
 **ESP32 section** (for the touch test, and for buttons, LEDs and ADC readings later):
 
-- **U1A/U1B:** two 1 × 8 female sockets, 15.24 mm (0.6″) apart, for an **ESP32-C3 SuperMini** with its
-  USB-C pointing **left, into the board**. The case wall is too close to the right and bottom edges for a
-  plug.
-  - Before soldering the sockets, check the row spacing and pin order against your module. Top row:
-    5, 6, 7, 8, 9, 10, 20, 21. Bottom row: 5V, GND, 3V3, 4, 3, 2, 1, 0. Both start at the USB end.
+- **U1A/U1B:** two 1 × 8 female sockets, 15.24 mm (0.6″) apart, for an **ESP32-C3 SuperMini**,
+  component side up, with its USB-C pointing **left, into the board**. The case wall is too close to the
+  right and bottom edges for a plug.
+  - Pin order, both rows starting at the USB end:
+    - Top row (U1A): 5V, GND, 3V3, 4, 3, 2, 1, 0.
+    - Bottom row (U1B): 5, 6, 7, 8, 9, 10, 20, 21.
+  - Pinout drawings of the module's underside show the rows the other way round.
+  - Check the row spacing against your module before soldering the sockets.
   - Keep the area left of the module free of tall parts for the USB plug.
 - **P6 EXT MCU:** 3V3, GND, the five control pins (IO4, IO5, IO6, IO7, IO10) and 5V. Wire any other
   ESP32 here instead.
@@ -59,13 +64,37 @@ How to read the headers:
 - **Touch power switch:**
   - Q1 (AO3401A P-MOSFET) feeds 3V3 to `T_VDD`. IO4 low turns it on; R1 holds it off while the ESP32
     boots. D1 lights when it's on.
-- **P5 TOUCH BUS:** VDD, GND, SDA, SCL, INT, RST.
+- **P5 TOUCH BUS:** VDD, VDD, GND, SDA, SCL, INT, RST.
+  - Both VDD pins are `T_VDD` (switched 3.3 V). On the Echo the touch side has two rails (3.0 V `vmch`
+    and 3.3 V `vgp1`), so the second pin saves a Y-jumper.
+  - The touch I/O voltage is still unknown. If a pin turns out to need 3.0 V, feed it from a bench
+    supply instead of P5.
   - SDA, SCL, INT and RST come from IO5, IO6, IO7 and IO10 through 220 Ω series resistors (R3–R6).
-  - SDA and SCL have 2.2 kΩ pull-ups (R7, R8) to `T_VDD`, so nothing back-powers the GT911 when its
-    supply is off. To remove them, cut solder jumpers JP1 and JP2.
+  - SDA and SCL have 2.2 kΩ pull-ups (R7, R8) to `T_VDD`, so the pull-ups don't back-power the GT911
+    when its supply is off. To remove them, cut solder jumpers JP1 and JP2.
+  - **Firmware rule:** while `T_VDD` is off (IO4 high), keep IO5, IO6, IO7 and IO10 low or
+    high-impedance. Driving one high feeds the GT911 through its 220 Ω resistor.
 
-The touch bus isn't wired to J30 on purpose. J30's pinout isn't mapped yet, so once it is, connect P5 to
-P4 with jumper wires. A wrong guess costs a wire, not a board.
+The touch bus isn't wired to J30 on purpose. J30's signals aren't mapped yet, so once they are, connect
+P5 to P4 with jumper wires. A wrong guess costs a wire, not a board.
+
+## Measuring the screw holes
+
+Do this on the old mainboard before ordering, and write the results into "Positions from the photos" in
+ECHO-SHOW-5.md.
+
+1. Lay the mainboard component side up, with the display edge (J44) on the left and the cable edge (J46,
+   J100) at the top, as in the photos.
+2. For each screw hole, use the caliper's depth rod or outside jaws to measure:
+   - the left edge to the near side of the hole, and the left edge to the far side; the average is the
+     centre x;
+   - the top edge to the near and far sides in the same way, for the centre y.
+3. Measure the hole's diameter with the inside jaws.
+4. Measure the board's width and height too. If the board isn't exactly 108 × 60 mm, scale the
+   positions to match.
+
+If every hole is within 0.4 mm of the board's position (the slack the 2.6 mm holes give an M2 screw), the
+board is fine as it is. If any is further out, edit `SCREWS` in `gen_board.py` and rebuild.
 
 ## Using it
 
@@ -85,6 +114,7 @@ P4 with jumper wires. A wrong guess costs a wire, not a board.
    4. Scan I²C for 0x5d and 0x14. If the chip answers, read the product ID at 0x8140 and the sensor ID
       at 0x814A.
    5. **Never write the config registers (0x8047 onward).**
+   6. Before switching the touch supply off (IO4 high), set IO5, IO6, IO7 and IO10 low or to inputs.
 5. **Power:**
    - Power comes only from the ESP32's USB. The Echo's own 12 V supply comes in through the IO board
      and J46, so **never plug the Echo's adapter in while the breakout is fitted**.
@@ -114,13 +144,13 @@ Steps:
    - mark J100 "do not place" and fit it yourself. It's a 0.3 mm part, but each of its two rows is 0.6 mm
      pitch: use flux and drag soldering, or hot air.
 5. Solder the through-hole parts yourself; they're not in the BOM:
-   - pin headers: 2 × 17, 2 × 16, 2 × 12, 3 × 1 × 8, 1 × 6, 1 × 2
+   - pin headers: 2 × 17, 2 × 16, 2 × 12, 3 × 1 × 8, 1 × 7, 1 × 2
    - two 1 × 8 female sockets
    - two GND test loops
 
 DRC (KiCad 10): 0 unconnected items. One accepted exception: screw hole H4 sits inside J30's courtyard
 (see Mounting above). The rules are 0.15 mm tracks and clearance, 0.4 mm power tracks and 0.3/0.6 mm
-vias, all within JLCPCB's standard limits.
+vias, and silkscreen strokes of at least 0.15 mm, all within JLCPCB's standard limits.
 
 ## Rebuilding
 

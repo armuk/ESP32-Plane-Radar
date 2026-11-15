@@ -53,8 +53,24 @@ def remove_dangling(board):
         removed += len(dead)
 
 
+def remove_dangling_kicad(board):
+    """Second pass with KiCad's own connectivity, for stubs the geometric pass misses."""
+    removed = 0
+    while True:
+        board.BuildConnectivity()
+        conn = board.GetConnectivity()
+        dead = [t for t in board.GetTracks()
+                if t.Type() == pcbnew.PCB_TRACE_T and conn.TestTrackEndpointDangling(t, False)]
+        if not dead:
+            return removed
+        for t in dead:
+            board.Delete(t)
+        removed += len(dead)
+
+
 if not os.environ.get('NO_CLEAN'):
     print('removed dangling segments:', remove_dangling(board))
+    print('removed dangling segments (KiCad check):', remove_dangling_kicad(board))
 
 gnd = board.FindNet('GND')
 for layer in (pcbnew.F_Cu, pcbnew.In1_Cu, pcbnew.In2_Cu, pcbnew.B_Cu):

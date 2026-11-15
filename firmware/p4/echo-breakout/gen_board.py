@@ -92,7 +92,7 @@ def text(s, x, y, size=1.0, layer=pcbnew.F_SilkS, bold=False, rot=0, halign='c')
     t.SetPosition(V(x, y))
     t.SetLayer(layer)
     t.SetTextSize(V(size, size))
-    t.SetTextThickness(mm(size * (0.2 if bold else 0.15)))
+    t.SetTextThickness(mm(max(0.18 if bold else 0.15, size * (0.2 if bold else 0.15))))   # JLC: >= 0.15
     t.SetTextAngleDegrees(rot)
     t.SetHorizJustify({'c': pcbnew.GR_TEXT_H_ALIGN_CENTER, 'l': pcbnew.GR_TEXT_H_ALIGN_LEFT,
                        'r': pcbnew.GR_TEXT_H_ALIGN_RIGHT}[halign])
@@ -119,12 +119,7 @@ def label_header(fp, labels, side_for_row=None, size=0.8, gap=2.15):
         text(labels[n], x, y - gap if above else y + gap, size)
 
 
-def match_pin1_end(sock, hdr, last_hdr_pin):
-    """Rotate a header 180 degrees if its pin 1 is at the far end from the socket's pin 1."""
-    sx = pad_pos(sock, 1).x
-    if abs(pad_pos(hdr, 1).x - sx) > abs(pad_pos(hdr, last_hdr_pin).x - sx):
-        c = hdr.GetPosition()
-        hdr.SetOrientationDegrees# Coordinates follow ECHO-SHOW-5.md "Positions from the photos": component side up, origin at the
+# Coordinates follow ECHO-SHOW-5.md "Positions from the photos": component side up, origin at the
 # mainboard's top-left corner, the top edge towards the IO and top-board cables, the left edge
 # towards the display. The ribbons are short (J44/J30 about 17.5 mm and tight), so each socket's
 # ribbon-facing edge sits where the original's does and the board mounts on the original screws.
@@ -209,41 +204,45 @@ for ref, n, rot, side, face, (cx, cy), p1end, href, hn, (hx, hy), title in SOCKE
     label_header(h, lab)
     text(title + ' (Echo pin numbers)', hx, hy + 5.4, 0.9, bold=True)
 
-# J30 touch: Hirose FH12 takes the ribbon from +y; rot -90 -> from the left. Pin 1 end unconfirmed,
-# so J30 keeps the socket's own numbering.
+# J30 touch: Hirose FH12 takes the ribbon from +y; rot -90 -> from the left. The mainboard silkscreen
+# marks pin 1 at the top end (nearest J44) and 8 at the bottom (nearest screw S4), so the header
+# carries Echo pin numbers like the others.
 j30 = add('J30', 'Connector_FFC-FPC', 'Hirose_FH12-8S-0.5SH_1x08-1MP_P0.50mm_Horizontal', -90,
           value='FH12-8S-0.5SH(55)', lcsc='C597995')
 centre_on(j30, None, 53.8)
 entry_face(j30, 'left', 14.9)
-for i in range(1, 9):
-    setnet(j30, i, 'J30_%d' % i)
+j30map = echo_numbering(j30, 8, 'top')
+for pad, e in j30map.items():
+    setnet(j30, pad, 'J30_%d' % e)
 setnet(j30, 'MP', 'GND')
+j30_pin1 = [pd for pd, e in j30map.items() if e == 1][0]
 p4 = add('P4', 'Connector_PinHeader_2.54mm', 'PinHeader_1x08_P2.54mm_Vertical', 90)
 centre_pads_at(p4, 34.5, 48.5)
-if header_pin1_near(p4, 8, pad_pos(j30, 1)):
+if header_pin1_near(p4, 8, pad_pos(j30, j30_pin1)):
     centre_pads_at(p4, 34.5, 48.5)
 for i in range(1, 9):
     setnet(p4, i, 'J30_%d' % i)
 label_header(p4, {str(i): str(i) for i in range(1, 9)}, 'below')
-text('J30 TOUCH 8P (socket pins)', 34.5, 52.9, 0.9, bold=True)
+text('J30 TOUCH 8P (Echo pin numbers)', 36.0, 52.9, 0.9, bold=True)
 
 # Touch bus (ESP32 side of the patch field): jumper these to P4 once J30 is mapped.
-TBUS = ['T_VDD', 'GND', 'T_SDA', 'T_SCL', 'T_INT', 'T_RST']
-p5 = add('P5', 'Connector_PinHeader_2.54mm', 'PinHeader_1x06_P2.54mm_Vertical', 90)
+TBUS = ['T_VDD', 'T_VDD', 'GND', 'T_SDA', 'T_SCL', 'T_INT', 'T_RST']   # two VDD: the panel has two touch rails
+p5 = add('P5', 'Connector_PinHeader_2.54mm', 'PinHeader_1x07_P2.54mm_Vertical', 90)
 centre_pads_at(p5, 33.0, 42.0)
 if pcbnew.ToMM(pad_pos(p5, 1).x) > 33.0:
     p5.SetOrientationDegrees(-90)
     centre_pads_at(p5, 33.0, 42.0)
 for i, nm in enumerate(TBUS, 1):
     setnet(p5, i, nm)
-label_header(p5, {'1': 'VDD', '2': 'G', '3': 'SDA', '4': 'SCL', '5': 'INT', '6': 'RST'}, 'above', 0.8)
+label_header(p5, {'1': 'VDD', '2': 'VDD', '3': 'G', '4': 'SDA', '5': 'SCL', '6': 'INT', '7': 'RST'}, 'above', 0.8)
 text('TOUCH BUS > J30 (jumpers)', 33.0, 37.6, 0.9, bold=True)
 
 # ---------------------------------------------------------------- ESP32-C3 SuperMini socket
 # USB-C points left, into the board (the case wall is close to the board's right and bottom edges).
-# Seen with USB on the left: top row IO5..IO21, bottom row 5V, GND, 3V3, IO4..IO0, pin 1 at the USB end.
-ESP_T = ['IO5', 'IO6', 'IO7', 'IO8', 'IO9', 'IO10', 'IO20', 'IO21']
-ESP_B = ['+5V', 'GND', '+3V3', 'IO4', 'IO3', 'IO2', 'IO1', 'IO0']
+# Component side up, USB on the left: top row 5V, GND, 3V3, IO4..IO0; bottom row IO5..IO21; both
+# listed from the USB end. (The underside drawings show the rows the other way round.)
+ESP_T = ['+5V', 'GND', '+3V3', 'IO4', 'IO3', 'IO2', 'IO1', 'IO0']
+ESP_B = ['IO5', 'IO6', 'IO7', 'IO8', 'IO9', 'IO10', 'IO20', 'IO21']
 SHORT = {'+5V': '5V', 'GND': 'G', '+3V3': '3V3'}
 for ref, y, names in (('U1A', 42.0, ESP_T), ('U1B', 57.24, ESP_B)):
     sk = add(ref, 'Connector_PinSocket_2.54mm', 'PinSocket_1x08_P2.54mm_Vertical', 90)
@@ -339,10 +338,15 @@ setnet(p8, 2, 'SPK_2')
 text('SPEAKER', 92.0, 7.0, 0.8, bold=True)
 
 # ---------------------------------------------------------------- mounting (the original screw positions) and ground
+HOLE = 2.6
 SCREWS = [(30.4, 6.3), (65.8, 2.5), (2.6, 29.1), (22.7, 58.1), (71.0, 56.8), (104.8, 31.4)]
 for i, (x, y) in enumerate(SCREWS, 1):
     # Plain holes: S4 is 1.9 mm from the edge and 2.4 mm from J30 pin 8, so no copper ring.
+    # Drilled 2.6 mm (not 2.2) for slack: the positions come from photos (+-0.3-0.8 mm).
     mh = add('H%d' % i, 'MountingHole', 'MountingHole_2.2mm_M2', 0)
+    for hp in mh.Pads():
+        hp.SetDrillSize(V(HOLE, HOLE))
+        hp.SetSize(V(HOLE, HOLE))
     mh.SetPosition(V(x, y))
 for i, (x, y) in enumerate([(101.0, 12.0), (40.0, 57.5)], 1):
     tp = add('TP%d' % i, 'TestPoint', 'TestPoint_THTPad_D1.5mm_Drill0.7mm', 0)
@@ -355,11 +359,12 @@ text('ECHO SHOW 5 BREAKOUT v2', 106.2, 17.5, 0.9, bold=True, rot=90)
 NOTES = [
     'ECHO SHOW 5 BREAKOUT v2 (KC19 mainboard size)',
     'Sockets sit where the originals do.',
-    'Header pin n = Echo pin n (J30: socket pins).',
+    'Header pin n = Echo pin n.',
     'Check pin 1 by continuity first.',
     'Unpowered only: never on a powered Echo.',
     'Touch: jumper J30 > TOUCH BUS, IO4 low,',
-    'then scan I2C 0x5D and 0x14.',
+    'then scan I2C 0x5D and 0x14. Touch off:',
+    'hold SDA/SCL/INT/RST low (no back-power).',
     'Insulate header pins here: faces the screen.',
 ]
 for i, line in enumerate(NOTES):
