@@ -509,7 +509,7 @@ display ribbon.
 | Feature | Centre x, y (mm) | Body (mm) | Orientation |
 |---|---|---|---|
 | **J44** display, 33 pins | 6.2, 39.0 | 4 × 12 | Opening faces the **left** edge (ribbon arrives from the left, about 4 mm in). **Pin 1 at the top (−y) end**, 33 at the bottom (silkscreen) |
-| **J30** touch, 8 pins | 17.1, 53.8 | 4–5 × 6.4 (with leads) | Opening (under the white actuator) faces the **left** edge; the solder legs are on the right. So the touch ribbon reaches about 15 mm in. No pin 1 mark visible in the photos |
+| **J30** touch, 8 pins | 17.1, 53.8 | 4–5 × 6.4 (with leads) | Opening (under the white actuator) faces the **left** edge; the solder legs are on the right. So the touch ribbon reaches about 15 mm in. **Pin 1 at the top (−y) end**, 8 at the bottom (silkscreen, from close-up photos) |
 | **J100** top board, 23 pins | 22.4, 6.4 | 9 × 4 | Opening faces the **top** edge. **Pin 1 at the right (+x) end**, 23 at the left (silkscreen) |
 | **J46** IO board, 31 pins | 42.0, 6.5 | 11.5 × 4 | Opening faces the **top** edge. **Pin 1 at the right (+x) end**, 31 at the left (silkscreen) |
 | **J45** camera, 25 pins | about 6, 10 | | Opening faces left. Pin 1 at the bottom, 25 at the top (silkscreen) |
@@ -521,6 +521,17 @@ display ribbon.
 | Screw S5 | 71.0, 56.8 | | Bottom edge |
 | Screw S6 | 104.8, 31.4 | | Right edge |
 | Plated holes (no screw) | 3.0, 5.2 and 2.9, 56.9 | | Top-left and bottom-left corners; probably ground points |
+
+**Hand measurements (2026-11-15):**
+
+| Hole | Measured | Centre this gives (mm) | Board hole | Verdict |
+|---|---|---|---|---|
+| S6 (right end) | 3 mm from the right edge, 104 mm from the left; 31 mm from the top, 28 mm from the bottom | x 104–105, y 31–32 | 104.8, 31.4 | Up to 0.8 mm off in x and 0.6 mm in y, against 0.3 mm of slack in a 2.6 mm hole: **not settled**. Caliper it |
+
+The pairs add up to 107 and 59 mm rather than 108 and 60. So the readings are either rounded to the
+nearest millimetre, or taken to the hole's near edge rather than its centre. A caliper reading to 0.1 mm
+(near side and far side of the hole from each edge, averaged) would settle it. The other five holes are
+still to measure.
 
 What this means for the breakout board:
 - **J44 and J30 are about 18 mm apart (centre to centre: 11 mm across, 15 mm down), both opening to the left edge.** The
@@ -723,8 +734,11 @@ It also carries:
   comes from a bench supply)
 
 Notes:
-- The screw holes are 2.6 mm, for slack on the photo-measured positions. Caliper-check them first
-  (method in the breakout README).
+- The screw holes are 2.6 mm, giving an M2 screw 0.3 mm of slack each way on the photo-measured
+  positions. Five of the six are still photo-derived, and S6's hand reading is too coarse to settle it.
+  Caliper-check them first (method in the breakout README).
+- No tracks or vias on the outer layers within 2.6 mm of a hole centre, so a screw head only touches
+  solder mask over ground.
 - Screw S4 clears J30's pins by only about 0.5 mm; leave it out if the head touches.
 - While the touch supply is off, firmware must keep SDA, SCL, INT and RST low or high-impedance.
 - The back faces the screen's metal shield: trim the pins and tape it.

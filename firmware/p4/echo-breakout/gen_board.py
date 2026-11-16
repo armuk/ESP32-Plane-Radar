@@ -5,6 +5,7 @@ Run with KiCad's bundled Python:
 Writes echo-breakout-unrouted.kicad_pcb and echo-breakout.dsn (for Freerouting).
 """
 import os
+import math
 import pcbnew
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -234,7 +235,7 @@ if pcbnew.ToMM(pad_pos(p5, 1).x) > 33.0:
     centre_pads_at(p5, 33.0, 42.0)
 for i, nm in enumerate(TBUS, 1):
     setnet(p5, i, nm)
-label_header(p5, {'1': 'VDD', '2': 'VDD', '3': 'G', '4': 'SDA', '5': 'SCL', '6': 'INT', '7': 'RST'}, 'above', 0.8)
+label_header(p5, {'1': 'V1', '2': 'V2', '3': 'G', '4': 'SDA', '5': 'SCL', '6': 'INT', '7': 'RST'}, 'above', 0.8)
 text('TOUCH BUS > J30 (jumpers)', 33.0, 37.6, 0.9, bold=True)
 
 # ---------------------------------------------------------------- ESP32-C3 SuperMini socket
@@ -339,6 +340,10 @@ text('SPEAKER', 92.0, 7.0, 0.8, bold=True)
 
 # ---------------------------------------------------------------- mounting (the original screw positions) and ground
 HOLE = 2.6
+KEEPOUT = 2.6   # radius of the track/via keepout around each screw
+# H4 (S4): J30 pin 8's pad comes within 2.43 mm of the hole centre, so 2.6 mm would trap it. 2.3 mm
+# still clears the head's furthest reach (1.9 mm + 0.3 mm off-centre).
+KEEPOUT_AT = {4: 2.3}
 SCREWS = [(30.4, 6.3), (65.8, 2.5), (2.6, 29.1), (22.7, 58.1), (71.0, 56.8), (104.8, 31.4)]
 for i, (x, y) in enumerate(SCREWS, 1):
     # Plain holes: S4 is 1.9 mm from the edge and 2.4 mm from J30 pin 8, so no copper ring.
@@ -348,6 +353,27 @@ for i, (x, y) in enumerate(SCREWS, 1):
         hp.SetDrillSize(V(HOLE, HOLE))
         hp.SetSize(V(HOLE, HOLE))
     mh.SetPosition(V(x, y))
+    # Keep tracks and vias out from under the screw head on both outer layers: an M2 pan head is
+    # 3.8 mm across and the 2.6 mm hole lets it sit 0.3 mm off-centre, so it reaches 2.2 mm out.
+    ko = pcbnew.ZONE(board)
+    ko.SetIsRuleArea(True)
+    ko.SetDoNotAllowTracks(True)
+    ko.SetDoNotAllowVias(True)
+    ko.SetDoNotAllowPads(False)
+    ko.SetDoNotAllowZoneFills(False)
+    ko.SetDoNotAllowFootprints(False)
+    ls = pcbnew.LSET()
+    ls.AddLayer(pcbnew.F_Cu)
+    ls.AddLayer(pcbnew.B_Cu)
+    ko.SetLayerSet(ls)
+    ko.SetZoneName('SCREW_H%d' % i)
+    o = ko.Outline()
+    o.NewOutline()
+    for k in range(32):
+        a = 2 * math.pi * k / 32
+        rk = KEEPOUT_AT.get(i, KEEPOUT)
+        o.Append(mm(x + rk * math.cos(a)), mm(y + rk * math.sin(a)))
+    board.Add(ko)
 for i, (x, y) in enumerate([(101.0, 12.0), (40.0, 57.5)], 1):
     tp = add('TP%d' % i, 'TestPoint', 'TestPoint_THTPad_D1.5mm_Drill0.7mm', 0)
     tp.SetPosition(V(x, y))

@@ -41,7 +41,11 @@ How to read the headers:
 
 **Mounting:**
 - Six plain 2.6 mm holes at the original screw positions, assumed M2. They're larger than an M2
-  clearance hole (2.2 mm) to absorb the photo error; an M2 pan head (3.8 mm) still covers them.
+  clearance hole (2.2 mm) to absorb the photo error: an M2 screw can sit up to 0.3 mm off-centre. An M2
+  pan head (3.8 mm) still covers them.
+- No tracks or vias within 2.6 mm of any hole centre on the outer layers (rule areas `SCREW_H1`–`H6`).
+  The head reaches 1.9 mm out, or 2.2 mm with the screw fully off-centre, so it only ever sits on solder
+  mask over ground pour.
 - **Measure before ordering** (see below): the positions come from photos.
 - Screw S4 (bottom, beside J30) is only 1.9 mm from the edge. Its head clears J30's pins by about
   0.5 mm, so leave that screw out if it touches.
@@ -64,8 +68,8 @@ How to read the headers:
 - **Touch power switch:**
   - Q1 (AO3401A P-MOSFET) feeds 3V3 to `T_VDD`. IO4 low turns it on; R1 holds it off while the ESP32
     boots. D1 lights when it's on.
-- **P5 TOUCH BUS:** VDD, VDD, GND, SDA, SCL, INT, RST.
-  - Both VDD pins are `T_VDD` (switched 3.3 V). On the Echo the touch side has two rails (3.0 V `vmch`
+- **P5 TOUCH BUS:** V1, V2, GND, SDA, SCL, INT, RST.
+  - V1 and V2 are both `T_VDD` (switched 3.3 V). On the Echo the touch side has two rails (3.0 V `vmch`
     and 3.3 V `vgp1`), so the second pin saves a Y-jumper.
   - The touch I/O voltage is still unknown. If a pin turns out to need 3.0 V, feed it from a bench
     supply instead of P5.
@@ -93,8 +97,9 @@ ECHO-SHOW-5.md.
 4. Measure the board's width and height too. If the board isn't exactly 108 × 60 mm, scale the
    positions to match.
 
-If every hole is within 0.4 mm of the board's position (the slack the 2.6 mm holes give an M2 screw), the
-board is fine as it is. If any is further out, edit `SCREWS` in `gen_board.py` and rebuild.
+If every hole is within 0.3 mm of the board's position (the slack a 2.6 mm hole gives an M2 screw), the
+board is fine as it is. If any is further out, edit `SCREWS` in `gen_board.py` and rebuild. Only S6 has
+been hand-measured so far, and not yet precisely enough to settle it (see ECHO-SHOW-5.md).
 
 ## Using it
 
