@@ -190,7 +190,9 @@ board.Add(r)
 
 # ---------------------------------------------------------------- FPC sockets, at the mainboard positions
 FH26 = 'Hirose_FH26-{n}S-0.3SHW_2Rows-{n}Pins-1MP_P0.60mm_Horizontal'
-FH26W_LCSC = {33: 'C424654', 31: 'C2973806', 23: 'C3168948'}
+# J100: Hirose's FH26W-23S-0.3SHW (C3168948) was out of stock on 2026-11-16. HCTL's copy has the same lands.
+FH26W_LCSC = {33: 'C424654', 31: 'C2973806', 23: 'C3012331'}
+FH26W_PART = {23: 'HC-FPC-03-10-23RLTAG'}
 # Which way round the FH26W goes. The ribbon enters on the LOCK side: the side with the flip lock, the
 # two metal end tabs and the larger leg row (16 of 31, 17 of 33). On the mainboard that side faces the
 # board edge on J44, J46 and J100 (microscope photos, 2026-11-16), and the smaller leg row is inboard
@@ -204,7 +206,7 @@ SOCKETS = [
     ('J46', 31, 270, 'top', 4.4, (42.0, None), 'right', 'P2', 32, (60.0, 17.5), 'J46 IO BOARD 31P'),
 ]
 for ref, n, rot, side, face, (cx, cy), p1end, href, hn, (hx, hy), title in SOCKETS:
-    sk = add(ref, 'Connector_FFC-FPC', FH26.format(n=n), rot, value='FH26W-%dS-0.3SHW(60)' % n,
+    sk = add(ref, 'Connector_FFC-FPC', FH26.format(n=n), rot, value=FH26W_PART.get(n, 'FH26W-%dS-0.3SHW(60)' % n),
              lcsc=FH26W_LCSC[n])
     centre_on(sk, cx, cy)
     body_face(sk, side, face)
@@ -224,7 +226,7 @@ for ref, n, rot, side, face, (cx, cy), p1end, href, hn, (hx, hy), title in SOCKE
     lab = {str(i): str(i) for i in range(1, n + 1)}
     lab[str(hn)] = 'G'
     label_header(h, lab)
-    text(title + ' (Echo pin numbers)', hx, hy + 5.4, 0.9, bold=True)
+    text(href + ' ' + title + ' (Echo pin numbers)', hx, hy + 5.4, 0.9, bold=True)
 
 # J30 touch: Hirose FH34SRJ-8S-0.5SH(50). The mainboard's own socket matches it on every count: 6.0 mm
 # wide, 3.8 mm deep, back-flip lock on the leg side, 0.3 mm ribbon, and the ribbon's 1.5 mm of bare
@@ -300,7 +302,7 @@ if header_pin1_near(p4, 8, pad_pos(j30, j30_pin1)):
 for i in range(1, 9):
     setnet(p4, i, 'J30_%d' % i)
 label_header(p4, {str(i): str(i) for i in range(1, 9)}, 'below')
-text('J30 TOUCH 8P (Echo pin numbers)', 36.0, 52.9, 0.9, bold=True)
+text('P4 J30 TOUCH 8P (Echo pins)', 35.0, 52.9, 0.9, bold=True)
 
 # Touch bus (ESP32 side of the patch field): jumper these to P4 once J30 is mapped.
 TBUS = ['T_VDD', 'T_VDD', 'GND', 'T_SDA', 'T_SCL', 'T_INT', 'T_RST']   # two VDD: the panel has two touch rails
@@ -312,7 +314,7 @@ if pcbnew.ToMM(pad_pos(p5, 1).x) > 33.0:
 for i, nm in enumerate(TBUS, 1):
     setnet(p5, i, nm)
 label_header(p5, {'1': 'V1', '2': 'V2', '3': 'G', '4': 'SDA', '5': 'SCL', '6': 'INT', '7': 'RST'}, 'above', 0.8)
-text('TOUCH BUS > J30 (jumpers)', 33.0, 37.6, 0.9, bold=True)
+text('P5 TOUCH BUS > J30 (jumpers)', 33.0, 37.6, 0.9, bold=True)
 
 # ---------------------------------------------------------------- ESP32-C3 SuperMini socket
 # USB-C points left, into the board (the case wall is close to the board's right and bottom edges).
@@ -345,7 +347,7 @@ if pcbnew.ToMM(pad_pos(p6, 1).x) > 87.0:
 for i, (nm, lb) in enumerate(EXT, 1):
     setnet(p6, i, nm)
 label_header(p6, {str(i): lb for i, (_, lb) in enumerate(EXT, 1)}, 'above', 0.8)
-text('EXT MCU (other ESP32)', 87.0, 30.7, 0.9, bold=True)
+text('P6 EXT MCU (other ESP32)', 87.0, 30.7, 0.9, bold=True)
 
 # SPARE: every other ESP32 pin (IO0-IO3 are ADC inputs: panel-ID resistor, voltage checks).
 SPARE = ['IO0', 'IO1', 'IO2', 'IO3', 'IO8', 'IO9', 'IO20', 'IO21']
@@ -357,7 +359,7 @@ if pcbnew.ToMM(pad_pos(p7, 1).x) > 87.0:
 for i, nm in enumerate(SPARE, 1):
     setnet(p7, i, nm)
 label_header(p7, {str(i): nm.replace('IO', '') for i, nm in enumerate(SPARE, 1)}, 'above', 0.8)
-text('SPARE IO (0-3 ADC)', 89.0, 21.7, 0.9, bold=True)
+text('P7 SPARE IO (0-3 ADC)', 89.0, 21.7, 0.9, bold=True)
 
 # ---------------------------------------------------------------- touch power switch + I2C protection
 R0603 = ('Resistor_SMD', 'R_0603_1608Metric')
@@ -387,7 +389,7 @@ for ref, (lib, name), val, lc, x, y, rot, n1, n2 in SMD:
     setnet(f, 1, n1)
     setnet(f, 2, n2)
 
-d1 = add('D1', 'LED_SMD', 'LED_0603_1608Metric', 90, 'Green', 'C72043')
+d1 = add('D1', 'LED_SMD', 'LED_0603_1608Metric', 90, 'Green', 'C84267')   # NationStar NCD0603G1; Everlight C72043 was out of stock
 d1.SetPosition(V(56.0, 42.5))
 setnet(d1, 1, 'GND')       # cathode
 setnet(d1, 2, 'LED_A')
@@ -397,7 +399,7 @@ for ref, x, y, n1 in (('JP1', 54.5, 50.5, 'PU_SDA'), ('JP2', 54.5, 53.0, 'PU_SCL
     j.SetPosition(V(x, y))
     setnet(j, 1, n1)
     setnet(j, 2, 'T_VDD')
-text('TOUCH PWR', 50.5, 39.6, 0.8, bold=True)
+text('TOUCH PWR', 49.0, 39.4, 0.8, bold=True)
 text('IO4 LOW=ON', 50.0, 55.6, 0.8)
 text('PULL-UPS: cut JP', 52.5, 57.4, 0.8)
 
@@ -462,7 +464,7 @@ p8 = add('P8', 'Connector_PinHeader_2.54mm', 'PinHeader_1x02_P2.54mm_Vertical', 
 centre_pads_at(p8, 103.0, 4.0)
 setnet(p8, 1, 'SPK_1')
 setnet(p8, 2, 'SPK_2')
-text('SPEAKER', 97.0, 4.0, 0.8, bold=True)
+text('P8 SPEAKER', 99.7, 4.0, 0.8, bold=True, halign='r')
 
 # ---------------------------------------------------------------- mounting (the original screw positions) and ground
 HOLE = 2.6      # finished hole; an M2 screw has 0.3 mm of slack in it
@@ -639,7 +641,7 @@ for i, (x, y) in enumerate([(101.0, 12.0), (40.0, 57.5)], 1):
 # ---------------------------------------------------------------- notes (back: it faces the screen when fitted)
 text('ECHO SHOW 5 BREAKOUT v2', 106.2, 17.5, 0.9, bold=True, rot=90)
 NOTES = [
-    'ECHO SHOW 5 BREAKOUT v2 (KC19 mainboard size)',
+    'ECHO SHOW 5 BREAKOUT v2   2026-11-16   1.0 mm',
     'Header pin n = Echo pin n.',
     'Check pin 1 by continuity first.',
     'Unpowered only: never on a powered Echo.',
@@ -652,6 +654,102 @@ for i, line in enumerate(NOTES):
     text(line, 44.0, 31.5 + i * 1.25, 0.8, layer=pcbnew.B_SilkS)   # clear of back pad B5
 
 
+
+# ---------------------------------------------------------------- assembly and fault-finding marks
+def silk_line(x0, y0, x1, y1, layer=pcbnew.F_SilkS, w=0.15):
+    g = pcbnew.PCB_SHAPE(board)
+    g.SetShape(pcbnew.SHAPE_T_SEGMENT)
+    g.SetStart(V(x0, y0))
+    g.SetEnd(V(x1, y1))
+    g.SetLayer(layer)
+    g.SetWidth(mm(w))
+    board.Add(g)
+
+
+def silk_box(x0, y0, x1, y1, layer=pcbnew.F_SilkS):
+    """A solid white patch to write on."""
+    g = pcbnew.PCB_SHAPE(board)
+    g.SetShape(pcbnew.SHAPE_T_RECT)
+    g.SetStart(V(x0, y0))
+    g.SetEnd(V(x1, y1))
+    g.SetLayer(layer)
+    g.SetWidth(mm(0.1))
+    g.SetFilled(True)
+    board.Add(g)
+
+
+# Part names (the footprints' own reference texts are hidden: they would land on pads here).
+text('R1', 45.5, 44.0, 0.8, halign='r')
+text('Q1', 50.0, 46.7, 0.8)
+text('R2', 53.5, 40.2, 0.8)
+text('D1', 56.0, 40.2, 0.8)
+text('C1', 55.5, 46.5, 0.8)
+text('C2', 46.5, 50.3, 0.8)
+# The four touch lines' series resistors, and the two pull-ups with their jumpers.
+for _ref, _sig, _y in (('R3', 'SDA', 41.0), ('R4', 'SCL', 43.0), ('R5', 'INT', 45.0), ('R6', 'RST', 47.0)):
+    text('%s %s' % (_ref, _sig), 62.0, _y, 0.8, halign='l')
+text('R7+JP1 SDA PU', 56.6, 50.5, 0.8, halign='l')
+text('R8+JP2 SCL PU', 56.6, 53.0, 0.8, halign='l')
+text('3V3 SW >', 23.6, 42.0, 0.8, halign='r')      # what P5's V1 and V2 carry
+
+# Sockets: name, end pin numbers, and which side the ribbon enters.
+text('1', 9.4, 34.2, 0.8)
+text('33', 9.7, 43.8, 0.8)
+text('J44', 10.3, 39.0, 0.8)
+text('RIBBON >', 2.9, 39.0, 0.8, rot=90)
+text('23', 19.1, 9.4, 0.8)
+text('J100', 22.4, 9.4, 0.8)
+text('1', 25.7, 9.4, 0.8)
+text('v RIBBON v', 22.4, 2.6, 0.8)
+text('31', 37.5, 9.3, 0.8)
+text('J46', 42.0, 9.3, 0.8)
+text('1', 46.5, 9.3, 0.8)
+text('v RIBBON v', 42.0, 2.5, 0.8)
+text('J30', 21.3, 53.8, 0.8)
+text('RIBBON >', 13.9, 53.8, 0.8, rot=90)
+text('J2', 85.7, 3.5, 0.8)
+
+# Warning: J46 carries the Echo's 12 V input once its adapter is plugged in.
+text('! 12V ON J46 / P2: NO ECHO ADAPTER !', 58.0, 11.6, 0.8, bold=True)
+
+# Which way round the board goes.
+text('CABLE EDGE', 54.5, 1.2, 0.8)
+text('FACE TO REAR CASE', 55.2, 2.7, 0.8)
+text('DISPLAY EDGE', 1.2, 39.0, 0.8, rot=90)
+
+# Screws, alignment holes and bare pads.
+for _name, _x, _y in (('S1', 30.35, 9.6), ('S2', 65.8, 6.0), ('S3', 6.2, 29.9), ('S4', 23.25, 55.2),
+                      ('S5', 67.0, 57.05), ('S6', 101.6, 31.35), ('A1', 5.6, 16.8), ('A2', 96.0, 17.05)):
+    text(_name, _x, _y, 0.8)
+text('TAPE PAD', 12.9, 2.0, 0.8)
+text('KEEP BARE', 13.1, 3.4, 0.8)
+text('KEEP BARE', 12.4, 53.8, 0.8, rot=90)
+
+# ESP32 module: where its two ends come, and which way up.
+silk_line(75.4, 45.0, 75.4, 54.5)
+silk_line(99.4, 45.0, 99.4, 54.5)
+text('ANT >', 96.0, 50.6, 0.8)
+text('COMPONENT SIDE UP', 87.4, 52.3, 0.8)
+
+# White patches to write pin functions on while mapping.
+silk_box(60.0, 25.0, 75.0, 32.0)
+silk_box(67.5, 48.5, 74.5, 54.0)
+
+# Back: the board's name, and pin 1 of every header for probing the solder side. (No JLCJLCJLCJLC
+# marker: JLCPCB stopped printing order numbers at a chosen spot in May 2026 and asks for it to be left out.)
+text('CRONOS BREAKOUT BOARD V2', 58.0, 45.2, 1.0, layer=pcbnew.B_SilkS, bold=True)
+text('https://github.com/armuk', 58.0, 47.0, 0.9, layer=pcbnew.B_SilkS)
+for _ref, _dy in (('P1', 1.9), ('P2', 1.9), ('P3', -1.9), ('P4', 1.9), ('P5', -1.9), ('P6', -1.9), ('P7', -1.9),
+                  ('P8', 1.9), ('U1A', -1.9), ('U1B', -1.9)):
+    _pp = pad_pos(board.FindFootprintByReference(_ref), 1)
+    text('1', pcbnew.ToMM(_pp.x), pcbnew.ToMM(_pp.y) + _dy, 0.8, layer=pcbnew.B_SilkS)
+
+# Fiducials for the assembly machine: three bare 1 mm dots, well apart and not in line, on spots the
+# routing leaves free. They matter here because of the 0.3 mm sockets.
+# JLCPCB wants each one, with its 2 mm mask opening, at least 3.35 mm from the board edge.
+for _i, (_x, _y) in enumerate([(100.0, 20.0), (62.0, 55.5), (11.0, 25.5)], 1):
+    _f = add('FID%d' % _i, 'Fiducial', 'Fiducial_1mm_Mask2mm', 0)
+    _f.SetPosition(V(_x, _y))
 
 # ---------------------------------------------------------------- rules
 import sys
@@ -674,7 +772,7 @@ with open(_dsn, 'w') as f:
 # BOM for JLCPCB. The through-hole headers and sockets are fitted by JLCPCB too (Kinghelm 2.54 mm
 # straight headers, LCSC numbers looked up 2026-11-16). The two ground test loops stay as bare holes.
 THT_PARTS = {
-    'PinHeader_2x17_P2.54mm_Vertical': ('KH-2.54PH180-2X17P-L8.9', 'C5157640'),
+    'PinHeader_2x17_P2.54mm_Vertical': ('HC-PZ254-11.5L-2x17PZ', 'C41376108'),
     'PinHeader_2x16_P2.54mm_Vertical': ('KH-2.54PH180-2X16P-L8.9', 'C5157639'),
     'PinHeader_2x12_P2.54mm_Vertical': ('KH-2.54PH180-2X12P-L8.9', 'C5157635'),
     'PinHeader_1x08_P2.54mm_Vertical': ('KH-2.54PH180-1X8P-L11.5', 'C2905487'),

@@ -895,14 +895,16 @@ anything else: J44 17.5 mm, J30 about the same, J100 23 mm, J46 44 mm. Socket po
 |---|---|---|
 | J44 | Hirose FH26W-33S-0.3SHW (C424654) | 2 × 17 header (last pin GND) |
 | J46/J4 | Hirose FH26W-31S-0.3SHW (C2973806) | 2 × 16 (last pin GND) |
-| J100 | Hirose FH26W-23S-0.3SHW (C3168948) | 2 × 12 (last pin GND) |
+| J100 | HCTL HC-FPC-03-10-23RLTAG (C3012331) | 2 × 12 (last pin GND) |
 | J30 | Hirose FH34SRJ-8S-0.5SH (C88372) | 1 × 8 |
 | Speaker (J2) | Molex Pico-SPOX 87438-0243 (C240853) | 1 × 2 |
 
 Header pin numbers are the **Echo's** pin numbers (mainboard silkscreen pin 1) on every header,
 J30 included.
 
-The J100 socket was **out of stock** at LCSC on 2026-11-15: pre-order it, or fit it by hand.
+Hirose's J100 socket was **out of stock** on 2026-11-16, so the BOM has a copy with the same lands:
+HCTL (Huacan Tianlu) HC-FPC-03-10-23RLTAG (C3012331). Two more copies: Hongcheng HC-FPC-0.3-23P-FH10
+(C49166929), XFCN F0302-B-23-10G-R (C25170829).
 
 It also carries:
 - an ESP32-C3 SuperMini socket (component side up, USB pointing left, into the board), plus an EXT

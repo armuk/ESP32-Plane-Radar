@@ -27,7 +27,7 @@ X0, Y0 = 20.0, 40.0     # page offset; everything below is relative to (X0, Y0)
 EXTENDERS = [
     ('j44-ext', 'J44', 33, 'C424654', 'DISPLAY'),
     ('j46-ext', 'J46', 31, 'C2973806', 'IO BOARD'),
-    ('j100-ext', 'J100', 23, 'C3168948', 'TOP BOARD'),
+    ('j100-ext', 'J100', 23, 'C3012331', 'TOP BOARD'),
 ]
 
 TRACE = 0.1             # signal width; 0.3 mm pitch leaves 0.2 mm gaps
@@ -149,7 +149,9 @@ def build(name, ref, n, lcsc, what):
     fp = pcbnew.FootprintLoad(FPDIR + 'Connector_FFC-FPC.pretty',
                               'Hirose_FH26-{n}S-0.3SHW_2Rows-{n}Pins-1MP_P0.60mm_Horizontal'.format(n=n))
     fp.SetReference('J1')
-    fp.SetValue('FH26W-%dS-0.3SHW(60)' % n)
+    # J100: Hirose's 23-pin part was out of stock on 2026-11-16; HCTL's copy has the same lands.
+    part = 'HC-FPC-03-10-23RLTAG' if n == 23 else 'FH26W-%dS-0.3SHW(60)' % n
+    fp.SetValue(part)
     board.Add(fp)
     # The FH26W takes the ribbon on its LOCK side: the flip lock, the two metal end tabs and the
     # larger pad row. In KiCad's footprint that side is -x, so no rotation: the ribbon comes in over
@@ -256,7 +258,7 @@ def build(name, ref, n, lcsc, what):
     write_project(pcb)
     with open(os.path.join(out, 'jlcpcb', 'bom.csv'), 'w') as f:
         f.write('Comment,Designator,Footprint,LCSC Part #\n')
-        f.write('"FH26W-%dS-0.3SHW(60)",J1,"%s",%s\n' % (n, fp.GetFPID().GetLibItemName(), lcsc))
+        f.write('"%s",J1,"%s",%s\n' % (part, fp.GetFPID().GetLibItemName(), lcsc))
     print('saved', pcb, 'width at socket %.1f, body %.1f, contacts %.1f mm' % (2 * HA, 2 * WB2, F))
 
 

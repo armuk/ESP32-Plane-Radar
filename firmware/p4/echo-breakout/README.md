@@ -29,7 +29,7 @@ its ribbon-facing edge at the original's position. To work with the board outsid
 |---|---|---|---|
 | **J44** display | Hirose FH26W-33S-0.3SHW(60) (C424654) | Body edge x = 4.2, centred y = 39.0, lock side left | P1, 2 × 17 |
 | **J30** touch | Hirose FH34SRJ-8S-0.5SH(50) (C88372) | Front face x = 15.1, centred y = 53.8, opening left | P4, 1 × 8 |
-| **J100** top board | Hirose FH26W-23S-0.3SHW(60) (C3168948) | Body edge y = 4.5, centred x = 22.4, lock side up | P3, 2 × 12 |
+| **J100** top board | HCTL HC-FPC-03-10-23RLTAG (C3012331), a copy of Hirose's FH26W-23S-0.3SHW | Body edge y = 4.5, centred x = 22.4, lock side up | P3, 2 × 12 |
 | **J46** IO board | Hirose FH26W-31S-0.3SHW(60) (C2973806) | Body edge y = 4.4, centred x = 42.0, lock side up | P2, 2 × 16 |
 | **J2** speaker | Molex Pico-SPOX 87438-0243 (C240853) | Centred x = 82.0, mating face 0.6 mm from the top edge, as on the mainboard | P8, 1 × 2 (top-right corner) |
 
@@ -107,6 +107,24 @@ How to read the headers:
 The touch bus isn't wired to J30 on purpose. J30's signals aren't mapped yet, so once they are, connect
 P5 to P4 with jumper wires. A wrong guess costs a wire, not a board.
 
+## Marks on the board
+
+Printed to help assembly and fault-finding:
+
+- **Part names** beside every part and header (R1–R8, C1, C2, Q1, D1, JP1, JP2, J2, J30, J44, J46, J100,
+  P1–P8), with the touch signals named at their resistors (`R3 SDA` … `R6 RST`) and pull-ups.
+- **`RIBBON` with an arrow** on the entry side of each ribbon socket, and the end pin numbers (1 and 33,
+  31, 23 or 8) at each socket's ends.
+- **`! 12V ON J46 / P2: NO ECHO ADAPTER !`** on the front.
+- **Which way round:** `CABLE EDGE`, `DISPLAY EDGE`, `FACE TO REAR CASE`, and for the ESP32 module
+  `< USB`, `ANT >` and `COMPONENT SIDE UP`, with a line at each end of where the module sits.
+- **Holes and pads:** S1–S6, A1, A2, and `KEEP BARE` by the bare ground pads.
+- **Two white patches** to write pin functions on while mapping.
+- **Back:** `CRONOS BREAKOUT BOARD V2` with `https://github.com/armuk` under it, the board's name, date
+  and thickness in the notes, a `1` at pin 1 of every header for probing the solder
+  side.
+- **Three fiducials** (bare 1 mm dots, FID1–FID3) for the assembly machine.
+
 ## Measuring the screw holes
 
 The hole positions come from two straight-down photos of the bare mainboard with a steel rule beside it
@@ -164,7 +182,14 @@ Steps:
      ribbon length), JLC's default 4-layer stackup for that thickness.
    - 108 × 60 mm.
    - ENIG recommended (flatter pads for the 0.3 mm sockets).
+   - Mark on PCB: **Remove Mark**. JLCPCB no longer prints the order number at a chosen spot (since May
+     2026), so the board carries no `JLCJLCJLCJLC` marker.
 2. Turn on **PCB Assembly**, top side, and upload the BOM and CPL.
+   - **Edge rails and fiducials: let JLCPCB add them.** Parts sit as close as 0.3 mm to the board edge
+     (J2, the ESP32 sockets, P8, the ribbon sockets), so the assembly line needs their 5 mm rails. The
+     board's own three fiducials meet their rule (1 mm dot, 2 mm opening, over 3.35 mm from the edge).
+   - Boards arrive with the rails attached unless you pay to have them removed. **Snap them off and
+     file the break points flush** before fitting: the board has to drop into the mainboard's place.
 3. **Check every part's rotation in JLCPCB's placement preview**, above all the four ribbon sockets:
    - Each socket's pin 1 mark must match the board.
    - **J44, J46 and J100 (FH26W):** the dark flip lock, the two metal end tabs and the larger leg row
@@ -175,12 +200,24 @@ Steps:
    - **J30's and J2's footprints are this project's own**, so JLCPCB's rotation for them is the least
      certain. J30's eight legs must be on the right, away from the display edge. J2's two tails must
      point down the board, with its open mouth at the top edge.
-4. **J100 (C3168948) was out of stock at LCSC on 2026-11-15.** Either:
-   - pre-order it through JLC's global sourcing, or
-   - mark J100 "do not place" and fit it yourself. It's a 0.3 mm part, but each of its two rows is 0.6 mm
-     pitch: use flux and drag soldering, or hot air.
+4. **Three parts are substitutes**, as the first choices were out of stock at JLCPCB on 2026-11-16:
+
+   | Part | First choice | In the BOM now |
+   |---|---|---|
+   | J100 | Hirose FH26W-23S-0.3SHW(60) (C3168948) | HCTL (Huacan Tianlu) HC-FPC-03-10-23RLTAG (C3012331) |
+   | D1 | Everlight 19-217/GHC-YR1S2/3T (C72043) | NationStar NCD0603G1 (C84267), the same emerald green |
+   | P1 | Kinghelm KH-2.54PH180-2X17P-L8.9 (C5157640) | Hong Cheng HC-PZ254-11.5L-2x17PZ (C41376108) |
+
+   - **J100:** the copy's drawing matches the FH26W-23S: same signal lands, same ribbon (0.2 mm thick,
+     7.2 mm wide, staggered), bottom contact, ribbon in on the tab side, 1.0 mm high. Only the tab lands
+     differ, by 0.2 mm at most. Its flip lock is more fragile than Hirose's.
+   - Two more copies with the same drawing: Hongcheng HC-FPC-0.3-23P-FH10 (C49166929) and
+     XFCN F0302-B-23-10G-R (C25170829).
+   - **P1:** its pins stand 6 mm above the plastic, like the single-row headers. P2 and P3 are the
+     shorter 8.9 mm parts.
+   - To go back to a first choice, change its number in `gen_board.py` and rebuild.
 5. **Through-hole parts are in the BOM too**, so JLCPCB fits the headers and the two ESP32 sockets
-   (Kinghelm 2.54 mm straight parts):
+   (2.54 mm straight parts, Kinghelm apart from P1):
    - This needs their through-hole assembly, which is priced per joint; there are about 150 joints.
    - Check each header's position and rotation in the placement preview. `cpl.csv` gives the centre of
      each part, which is what JLCPCB expects, but their library part may sit a quarter-turn off.

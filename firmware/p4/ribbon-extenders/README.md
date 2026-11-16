@@ -8,7 +8,7 @@ open Echo instead of screwed into its case. See [ECHO-SHOW-5.md](../ECHO-SHOW-5.
 |---|---|---|---|
 | [`j44-ext`](j44-ext) | J44 display, 33 pins, 17.5 mm | FH26W-33S-0.3SHW(60) (C424654) | 21.0 / 10.6 / 10.2 mm |
 | [`j46-ext`](j46-ext) | J46 IO board, 31 pins, 44 mm | FH26W-31S-0.3SHW(60) (C2973806) | 19.8 / 10.0 / 9.6 mm |
-| [`j100-ext`](j100-ext) | J100 top board, 23 pins, 23 mm | FH26W-23S-0.3SHW(60) (C3168948) | 15.0 / 7.6 / 7.2 mm |
+| [`j100-ext`](j100-ext) | J100 top board, 23 pins, 23 mm | HC-FPC-03-10-23RLTAG (C3012331) | 15.0 / 7.6 / 7.2 mm |
 
 ![J44 extender, top](j44-ext/renders/top.png)
 
@@ -59,8 +59,9 @@ Each extender is a 2-layer flex PCB, 100 mm from end to end:
   - Once J44 is mapped, a version with a ground layer and matched pairs can replace it.
 - **J46 carries the Echo's 12 V input** on 0.1 mm lines. These extenders are for unpowered mapping and
   for 3.3 V/5 V testing from the ESP32. **Don't run the Echo from its own adapter through them.**
-- **J100 (C3168948) was out of stock at LCSC on 2026-11-15**, the same as for the breakout. Pre-order it,
-  or have the flex made without assembly and fit the socket yourself.
+- **J100's socket is a copy of the Hirose part**, HCTL HC-FPC-03-10-23RLTAG (C3012331): Hirose's
+  FH26W-23S-0.3SHW(60) (C3168948) was out of stock on 2026-11-16. The lands are the same. More in the
+  [breakout's ordering steps](../echo-breakout/README.md#ordering-at-jlcpcb).
 
 ## Ordering at JLCPCB (flex PCB)
 
