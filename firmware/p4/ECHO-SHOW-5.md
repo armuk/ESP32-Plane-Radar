@@ -137,6 +137,69 @@ of L20 next to the fine traces fanning out to the memory; and a raised solder bl
 above L20. The GT911's kapton cover was also removed for photos. **Before powering again, cover the bare
 GT911 flex and the exposed copper with kapton**, so nothing shorts against the metal frame or the shields.
 
+**Microscope close-ups (2026-11-16, 14 photos):**
+- **Most of the bare copper is ground.** The widest gouges run along the edges of the shield-can fences and
+  the via-stitch rows beside them. Those are ground pour, so they are cosmetic: a risk only of shorting to
+  metal, and kapton covers that.
+- **Bottom-edge screw:** one gouge runs diagonally from a via straight to the screw's gold ring. A second
+  photo shows two parallel diagonal scrapes under a shield edge, lined up with traces that continue under
+  the mask. Copper is exposed along them, but no clean break shows at this magnification. **These are the
+  only marks that could be a cut signal trace;** continuity, not photos, settles it.
+- **Right of L20** (the "grey patch" above): **the copper foil has been torn off the board.** Higher
+  magnification (13 more photos, same day) shows:
+  - a salmon-pink flap of copper, still attached on one side, folded back beside a dark-brown patch of
+    the same shape;
+  - the flap carries a via dimple that matches the patch;
+  - in the patch, translucent cross-hatched glass weave with via holes: bare laminate.
+
+  The solder mask edges around it are torn and serrated. So the glossy green is the board's own mask
+  pulled up, not a repair. The part above L20 sits in a similar torn hole with bare laminate beside it.
+
+  It was a wide pour stitched with vias (ground or a supply plane), not a fine trace. **The display and
+  backlight still work, so the circuits there still connect.** It isn't the touch fault.
+- **Bottom-edge screw gouges:** the copper is gouged, not just bared. One spot has a curled sliver of
+  copper standing up, one gouge has a loose copper hair lying across it, and loose flakes sit under the
+  shield edge. Still no visibly cut trace.
+- **J30 close-ups (5 photos, same day): the likeliest touch fault.**
+  - All eight J30 legs are soldered cleanly, with no bridges and no lifted legs.
+  - The fine traces from each leg to the part in front of it are intact. The parts at the pin-8 end (two
+    marked `C5`, plus two resistors) look undamaged.
+  - **The two parts at the pin-1 end (by the silkscreen "1") are damaged:**
+    - The grey-bodied part, second from the end, has a crumbled, broken-off right end with white debris
+      and a rust-coloured speck. That looks like a cracked ceramic capacitor or ferrite.
+    - The resistor at the very end has a dark, irregular patch eating into its right end, unlike its
+      siblings. That looks like a chipped or scorched resistive layer.
+  - **Closer photos (2 more) confirm both are broken, not just marked:**
+    - **End resistor:** the dark resistive top is split into separate blocks with a crack across the
+      body, and its right end is chipped. Probably **open circuit**.
+    - **Grey part:** the right end of the body has broken away from its end cap. The cap is still
+      soldered, but crumbled body material, white powder and a void sit between them. The trace from
+      the nearest J30 leg runs to this part's left pad. A grey body could be a capacitor, a ferrite bead
+      or an ESD diode; the intact grey parts on the other lines look the same. Most likely **open**,
+      possibly a short.
+    - Both breaks are on the side away from J30, the side a tool sliding along the socket would hit.
+  - A broken capacitor can fail **short** (pulling its line or a supply to ground) or open. A broken
+    series part fails open. Either would stop the GT911 answering, and these are on the touch connector.
+  - A few loose flecks of debris lie between the legs. Brush them away.
+  - **Check (unpowered, meter):**
+    1. Resistance across each of the two damaged parts, compared with the matching part on the other
+       lines.
+    2. Each of the two parts' outer pads to ground. A near-0 Ω reading means a shorted capacitor.
+    3. Continuity from J30 legs 1 and 2 to the parts' pads.
+  - **For the project:** if these two parts are the fault, it sits on the mainboard. The touch ribbon and
+    GT911, the parts being reused, are then probably fine, and the breakout's touch test will show it.
+- **Before powering the Echo again:**
+  1. Lift off loose copper hairs and flakes with tweezers.
+  2. Glue the copper flap flat (UV solder mask or a dab of epoxy) rather than cutting it: it may still
+     carry current.
+  3. Cover every bare area with kapton. A flap or sliver touching a shield, or the fine memory traces
+     beside L20, is a new short waiting to happen.
+- **Fine traces fanning out to the memory, Q3002/D21, X302, S802/TP1433:** intact as far as the photos
+  show.
+- **Next step:** with the board unpowered, beep each J30 leg to the part in front of it, and from there
+  along the trace as far as it can be followed. A break near the bottom-edge screw would explain the touch
+  fault and leave the touch ribbon and GT911 good to reuse.
+
 ### J30 pinout (8 pins) — to measure
 
 Pins 1 and 8 run into the wide copper surround on the ribbon's back (a steel stiffener sits behind the
