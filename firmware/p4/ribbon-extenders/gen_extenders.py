@@ -151,7 +151,10 @@ def build(name, ref, n, lcsc, what):
     fp.SetReference('J1')
     fp.SetValue('FH26W-%dS-0.3SHW(60)' % n)
     board.Add(fp)
-    fp.SetOrientationDegrees(180)          # ribbon enters from -x
+    # The FH26W takes the ribbon on its LOCK side: the flip lock, the two metal end tabs and the
+    # larger pad row. In KiCad's footprint that side is -x, so no rotation: the ribbon comes in over
+    # the front edge of end A. (Earlier versions had the socket the other way round.)
+    fp.SetOrientationDegrees(0)
     fp.Reference().SetVisible(False)
     fp.Value().SetVisible(False)
     sig = [p for p in fp.Pads() if p.GetNumber() != 'MP']
@@ -188,7 +191,7 @@ def build(name, ref, n, lcsc, what):
     for row in (front, rear):
         x = sum(px for _, px in row) / len(row)
         yy = [ys[k - 1] for k, _ in row]
-        half = 0.45 if row is front else 0.5
+        half = 0.5 if row is front else 0.45       # front lands are 0.8 mm long, rear 0.65 mm
         rect(pcbnew.F_Mask, x - half, min(yy) - 0.3, x + half, max(yy) + 0.3)
 
     # ------------------------------------------------------------ end B: contacts (bottom face)

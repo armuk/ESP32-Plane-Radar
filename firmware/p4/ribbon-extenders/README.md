@@ -83,6 +83,8 @@ Before paying:
 - **Ask JLCPCB to confirm the contact end is 0.2 ± 0.03 mm thick** in total. The FH26 needs that
   (0.11 mm flex + 0.1 mm PI stiffener ≈ 0.21 mm). If their stackup comes out different, change the PI
   stiffener thickness, not the flex.
+- **The socket's flip lock, metal end tabs and larger leg row face the front edge of end A**; the
+  ribbon enters on the lock side. Earlier versions had the socket the other way round.
 - In the assembly preview, check that the socket's opening faces the **narrow end of the wide pad**,
   away from the body. That's the side with the two via rows.
 - The stiffener outlines are also on User.1 and User.2 in the KiCad files, with notes. JLCPCB asks

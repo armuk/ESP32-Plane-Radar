@@ -16,6 +16,7 @@ V = pcbnew.VECTOR2I_MM
 
 board = pcbnew.BOARD()
 board.SetCopperLayerCount(4)    # 2 layers can't fan out the 0.3 mm sockets in the mainboard footprint
+board.GetDesignSettings().SetBoardThickness(pcbnew.FromMM(1.0))   # the mainboard is 1.0 mm; the ribbons wrap its edge
 nets = {}
 BOM = {}                      # ref -> (value, footprint name, LCSC part or None)
 
@@ -126,6 +127,21 @@ def label_header(fp, labels, side_for_row=None, size=0.8, gap=2.15):
 # ribbon-facing edge sits where the original's does and the board mounts on the original screws.
 
 
+def body_face(fp, side, v):
+    """Move a socket so its body edge (F.Fab outline) on the ribbon side ('left' or 'top') lies at v."""
+    xs, ys = [], []
+    for g in fp.GraphicalItems():
+        if g.GetLayer() == pcbnew.F_Fab:
+            r = g.GetBoundingBox()
+            xs += [r.GetLeft(), r.GetRight()]
+            ys += [r.GetTop(), r.GetBottom()]
+    p = fp.GetPosition()
+    if side == 'left':
+        fp.SetPosition(pcbnew.VECTOR2I(p.x + mm(v) - min(xs), p.y))
+    else:
+        fp.SetPosition(pcbnew.VECTOR2I(p.x, p.y + mm(v) - min(ys)))
+
+
 def entry_face(fp, side, v):
     """Move a socket so its body edge on the ribbon side ('left' or 'top') lies at coordinate v."""
     bb = fp.GetBoundingBox(False)
@@ -175,18 +191,23 @@ board.Add(r)
 # ---------------------------------------------------------------- FPC sockets, at the mainboard positions
 FH26 = 'Hirose_FH26-{n}S-0.3SHW_2Rows-{n}Pins-1MP_P0.60mm_Horizontal'
 FH26W_LCSC = {33: 'C424654', 31: 'C2973806', 23: 'C3168948'}
-# The FH26 footprint takes the ribbon from +x: rot 180 -> from the left, rot 90 -> from the top.
+# Which way round the FH26W goes. The ribbon enters on the LOCK side: the side with the flip lock, the
+# two metal end tabs and the larger leg row (16 of 31, 17 of 33). On the mainboard that side faces the
+# board edge on J44, J46 and J100 (microscope photos, 2026-11-16), and the smaller leg row is inboard
+# with its legs standing 0.5 mm clear of the body. In KiCad's footprint the lock side is -x:
+# rot 0 -> ribbon from the left, rot 270 -> from the top. (Earlier versions had these reversed.)
+# 'face' is the socket body's edge from the board edge, measured by caliper on the mainboard.
 SOCKETS = [
     # ref, pins, rot, ribbon side, face coordinate, centre, Echo pin 1 end, header, header pads, header centre, title
-    ('J44', 33, 180, 'left', 4.2, (None, 39.0), 'top', 'P1', 34, (36.0, 28.5), 'J44 DISPLAY 33P'),
-    ('J100', 23, 90, 'top', 4.4, (22.4, None), 'right', 'P3', 24, (22.0, 17.5), 'J100 TOP BOARD 23P'),
-    ('J46', 31, 90, 'top', 4.5, (42.0, None), 'right', 'P2', 32, (60.0, 17.5), 'J46 IO BOARD 31P'),
+    ('J44', 33, 0, 'left', 4.2, (None, 39.0), 'top', 'P1', 34, (36.0, 28.5), 'J44 DISPLAY 33P'),
+    ('J100', 23, 270, 'top', 4.5, (22.4, None), 'right', 'P3', 24, (22.0, 17.5), 'J100 TOP BOARD 23P'),
+    ('J46', 31, 270, 'top', 4.4, (42.0, None), 'right', 'P2', 32, (60.0, 17.5), 'J46 IO BOARD 31P'),
 ]
 for ref, n, rot, side, face, (cx, cy), p1end, href, hn, (hx, hy), title in SOCKETS:
     sk = add(ref, 'Connector_FFC-FPC', FH26.format(n=n), rot, value='FH26W-%dS-0.3SHW(60)' % n,
              lcsc=FH26W_LCSC[n])
     centre_on(sk, cx, cy)
-    entry_face(sk, side, face)
+    body_face(sk, side, face)
     emap = echo_numbering(sk, n, p1end)
     for pad, e in emap.items():
         setnet(sk, pad, '%s_%02d' % (ref, e))
@@ -238,6 +259,16 @@ def make_fh34srj_8s():
         fp.Add(g)
     box(pcbnew.F_Fab, -3.0, -1.9, 3.0, 1.9, 0.1)               # body: 6.0 x 3.8 with leads
     box(pcbnew.F_CrtYd, -3.25, -2.15, 3.25, 2.15, 0.05)
+    # Silkscreen: a bracket round the leg side and both ends, open where the ribbon enters. KiCad has
+    # no 3D model for this part, so this is also what shows in the renders.
+    for x0, y0, x1, y1 in ((-3.15, -2.05, 3.15, -2.05), (-3.15, -2.05, -3.15, 0.7), (3.15, -2.05, 3.15, 0.7)):
+        g = pcbnew.PCB_SHAPE(fp)
+        g.SetShape(pcbnew.SHAPE_T_SEGMENT)
+        g.SetStart(V(x0, y0))
+        g.SetEnd(V(x1, y1))
+        g.SetLayer(pcbnew.F_SilkS)
+        g.SetWidth(mm(0.15))
+        fp.Add(g)
     return fp
 
 
@@ -253,6 +284,8 @@ centre_on(j30, None, 53.8)
 # Front face at 15.1 mm from the display edge, where the mainboard's is: its legs measure 18.2-18.7 mm
 # in the ruler photos and this puts the lands at 17.75-18.55. The courtyard edge is 0.25 mm further out.
 entry_face(j30, 'left', 14.85)
+text('1', 20.1, 52.05, 0.8)      # Echo pin numbers at the ends of J30's leg row
+text('8', 20.1, 55.55, 0.8)
 # The mainboard silkscreen marks pin 1 at the top end (nearest J44) and 8 at the bottom (nearest screw
 # S4), so the header carries Echo pin numbers like the others.
 j30map = echo_numbering(j30, 8, 'top')
@@ -369,12 +402,62 @@ text('IO4 LOW=ON', 50.0, 55.6, 0.8)
 text('PULL-UPS: cut JP', 52.5, 57.4, 0.8)
 
 # ---------------------------------------------------------------- speaker (J2 lead), where the original sits
-j2 = add('J2', 'Connector_Molex', 'Molex_PicoBlade_53261-0271_1x02-1MP_P1.25mm_Horizontal', 180,
-         value='53261-0271', lcsc='C177225')
-j2.SetPosition(V(82.4, 3.0))
-entry_face(j2, 'top', 0.5)
-setnet(j2, 1, 'SPK_1')
-setnet(j2, 2, 'SPK_2')
+# Molex Pico-SPOX 87438-0243: 1.5 mm pitch, right-angle SMT, no metal side tabs. The mainboard's header
+# matches it: leads 1.50-1.53 mm apart, housing about 4.5 mm wide and 5.4 mm deep (Molex: 4.3 x 5.75).
+# The plug is the 87439-0200 housing. (Earlier versions had a 1.25 mm PicoBlade here, which is wrong.)
+def make_picospox_2():
+    """Footprint from Molex's recommended PCB layout (874380231-SD sheet 2). Each terminal solders
+    in two places with a no-copper gap between: under the body (3.55 x 0.85) and at the tail
+    (2.65 x 0.85). The plug enters at +y; origin at the body centre (4.3 x 5.75)."""
+    fp = pcbnew.FOOTPRINT(board)
+    fp.SetFPID(pcbnew.LIB_ID('echo-breakout', 'Molex_Pico-SPOX_87438-0243_1x02_P1.50mm_Horizontal'))
+    fp.SetAttributes(pcbnew.FP_SMD)
+    def smd(num, x, y, w, h):
+        p = pcbnew.PAD(fp)
+        p.SetAttribute(pcbnew.PAD_ATTRIB_SMD)
+        p.SetShape(pcbnew.PAD_SHAPE_RECT)
+        p.SetSize(V(w, h))
+        p.SetLayerSet(pcbnew.PAD.SMDMask())
+        p.SetNumber(num)
+        fp.Add(p)
+        p.SetPosition(V(x, y))
+    for num, x in (('1', 0.75), ('2', -0.75)):
+        smd(num, x, -4.05, 0.85, 2.65)      # tail land: carries the net
+        smd('', x, -0.15, 0.85, 3.55)       # land under the body: same terminal, left without a net
+    def box(layer, x0, y0, x1, y1, w):
+        g = pcbnew.PCB_SHAPE(fp)
+        g.SetShape(pcbnew.SHAPE_T_RECT)
+        g.SetStart(V(x0, y0))
+        g.SetEnd(V(x1, y1))
+        g.SetLayer(layer)
+        g.SetWidth(mm(w))
+        fp.Add(g)
+    box(pcbnew.F_Fab, -2.15, -2.875, 2.15, 2.875, 0.1)
+    box(pcbnew.F_CrtYd, -2.4, -5.6, 2.4, 3.125, 0.05)
+    for x0, y0, x1, y1 in ((-2.3, -3.0, -2.3, 3.0), (2.3, -3.0, 2.3, 3.0), (-2.3, 3.0, 2.3, 3.0)):
+        g = pcbnew.PCB_SHAPE(fp)
+        g.SetShape(pcbnew.SHAPE_T_SEGMENT)
+        g.SetStart(V(x0, y0))
+        g.SetEnd(V(x1, y1))
+        g.SetLayer(pcbnew.F_SilkS)
+        g.SetWidth(mm(0.15))
+        fp.Add(g)
+    return fp
+
+
+j2 = make_picospox_2()
+j2.SetReference('J2')
+j2.SetValue('87438-0243')
+BOM['J2'] = ('87438-0243', 'Molex_Pico-SPOX_87438-0243_1x02_P1.50mm_Horizontal', 'C240853')
+board.Add(j2)
+j2.SetOrientationDegrees(180)             # plug enters from the top board edge
+j2.Reference().SetVisible(False)
+j2.Value().SetVisible(False)
+# On the mainboard the two leads are centred 82.0 mm from the display edge and their tips are 8.4 mm
+# from the cable edge (ruler photos), which puts the mating face 0.6 mm in and the body centre at 3.475.
+j2.SetPosition(V(82.0, 3.475))
+setnet(j2, 1, 'SPK_2')     # which lead is which doesn't matter for a speaker; this order keeps
+setnet(j2, 2, 'SPK_1')     # the two tracks to P8 from crossing
 p8 = add('P8', 'Connector_PinHeader_2.54mm', 'PinHeader_1x02_P2.54mm_Vertical', 90)
 centre_pads_at(p8, 103.0, 4.0)
 setnet(p8, 1, 'SPK_1')
@@ -425,8 +508,9 @@ for i, (x, y) in enumerate(SCREWS, 1):
         o.Append(mm(x + rk * math.cos(a)), mm(y + rk * math.sin(a)))
     board.Add(ko)
 # Alignment holes: the case has locating pegs here (by J45, and by the part-number print). Plain
-# holes, 2.9 mm for the mainboard's 2.5 mm, with tracks kept 2 mm clear on the outer layers.
-ALIGN_HOLE = 2.9
+# holes, 2.5 mm as on the mainboard (the pegs are 1.8-1.9 mm), with tracks kept 2 mm clear on the outer
+# layers.
+ALIGN_HOLE = 2.5
 ALIGN = [(3.1, 16.8), (93.4, 17.05)]
 for i, (x, y) in enumerate(ALIGN, 1):
     ah = add('A%d' % i, 'MountingHole', 'MountingHole_2.2mm_M2', 0)
@@ -587,7 +671,21 @@ with open(_dsn) as f:
 with open(_dsn, 'w') as f:
     f.write(_txt.replace('(pcb "' + _dsn + '"', '(pcb "echo-breakout.dsn"', 1))
 
-# BOM for JLCPCB (assembled parts only; through-hole headers and sockets are fitted by hand)
+# BOM for JLCPCB. The through-hole headers and sockets are fitted by JLCPCB too (Kinghelm 2.54 mm
+# straight headers, LCSC numbers looked up 2026-11-16). The two ground test loops stay as bare holes.
+THT_PARTS = {
+    'PinHeader_2x17_P2.54mm_Vertical': ('KH-2.54PH180-2X17P-L8.9', 'C5157640'),
+    'PinHeader_2x16_P2.54mm_Vertical': ('KH-2.54PH180-2X16P-L8.9', 'C5157639'),
+    'PinHeader_2x12_P2.54mm_Vertical': ('KH-2.54PH180-2X12P-L8.9', 'C5157635'),
+    'PinHeader_1x08_P2.54mm_Vertical': ('KH-2.54PH180-1X8P-L11.5', 'C2905487'),
+    'PinHeader_1x07_P2.54mm_Vertical': ('KH-2.54PH180-1X7P-L11.5', 'C2932700'),
+    'PinHeader_1x02_P2.54mm_Vertical': ('KH-2.54PH180-1X2P-L11.5', 'C2905434'),
+    'PinSocket_1x08_P2.54mm_Vertical': ('KH-2.54FH-1X8P-H8.5', 'C2905417'),
+}
+for _fp in board.GetFootprints():
+    _name = str(_fp.GetFPID().GetLibItemName())
+    if _name in THT_PARTS:
+        BOM[_fp.GetReference()] = (THT_PARTS[_name][0], _name, THT_PARTS[_name][1])
 import csv
 groups = {}
 for ref, (val, fpn, lc) in BOM.items():

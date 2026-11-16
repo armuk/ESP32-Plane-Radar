@@ -241,8 +241,8 @@
     (component PinHeader_1x02_P2.54mm_Vertical
       (place P8 101730 -4000 front 90 (PN PinHeader_1x02_P2.54mm_Vertical))
     )
-    (component "Molex_PicoBlade_53261-0271_1x02-1MP_P1.25mm_Horizontal"
-      (place J2 82400 -3625 front 180 (PN "53261-0271"))
+    (component "echo-breakout:Molex_Pico-SPOX_87438-0243_1x02_P1.50mm_Horizontal"
+      (place J2 82000 -3475 front 180 (PN "87438-0243"))
     )
     (component "SolderJumper-2_P1.3mm_Bridged_RoundedPad1.0x1.5mm"
       (place JP2 54500 -53000 front 0 (PN "SolderJumper-2_P1.3mm_Bridged_RoundedPad1.0x1.5mm"))
@@ -289,19 +289,19 @@
       (place P2 40950 -18770 front 90 (PN PinHeader_2x16_P2.54mm_Vertical))
     )
     (component "Hirose_FH26-31S-0.3SHW_2Rows-31Pins-1MP_P0.60mm_Horizontal"
-      (place J46 42000 -6825 front 90 (PN "FH26W-31S-0.3SHW(60)"))
+      (place J46 42000 -6350 front -90 (PN "FH26W-31S-0.3SHW(60)"))
     )
     (component PinHeader_2x12_P2.54mm_Vertical
       (place P3 35970 -16230 front -90 (PN PinHeader_2x12_P2.54mm_Vertical))
     )
     (component "Hirose_FH26-23S-0.3SHW_2Rows-23Pins-1MP_P0.60mm_Horizontal"
-      (place J100 22400 -6725 front 90 (PN "FH26W-23S-0.3SHW(60)"))
+      (place J100 22400 -6450 front -90 (PN "FH26W-23S-0.3SHW(60)"))
     )
     (component PinHeader_2x17_P2.54mm_Vertical
       (place P1 15680 -29770 front 90 (PN PinHeader_2x17_P2.54mm_Vertical))
     )
     (component "Hirose_FH26-33S-0.3SHW_2Rows-33Pins-1MP_P0.60mm_Horizontal"
-      (place J44 6525 -39000 front 180 (PN "FH26W-33S-0.3SHW(60)"))
+      (place J44 6150 -39000 front 0 (PN "FH26W-33S-0.3SHW(60)"))
     )
   )
   (library
@@ -390,10 +390,10 @@
             0 2200  287.158 2181.18  569.402 2125.04  841.904 2032.54  1100 1905.26
             1339.28 1745.38  1555.63 1555.63  1745.38 1339.28  1905.26 1100
             2032.54 841.904  2125.04 569.402  2181.18 287.158  2200 0))
-      (keepout "" (circle F.Cu 3400))
-      (keepout "" (circle In1.Cu 3400))
-      (keepout "" (circle In2.Cu 3400))
-      (keepout "" (circle B.Cu 3400))
+      (keepout "" (circle F.Cu 3000))
+      (keepout "" (circle In1.Cu 3000))
+      (keepout "" (circle In2.Cu 3000))
+      (keepout "" (circle B.Cu 3000))
     )
     (image MountingHole_2.2mm_M2::1
       (outline (polygon signal 0  235.013 2436.2  544.624 2386.15  845.283 2296.91  1132.07 2169.96
@@ -467,41 +467,16 @@
       (pin Rect[A]Pad_1700.000000x1700.000000_um 1 0 0)
       (pin Round[A]Pad_1700.000000_um 2 0 -2540)
     )
-    (image "Molex_PicoBlade_53261-0271_1x02-1MP_P1.25mm_Horizontal"
-      (outline (polygon signal 0  -2625 -2695  -4125 -2695  -4125 -2495  -4725 -2495  -4725 1495
-            -2625 1495  -2625 2095  -1525 2095  -1525 3695  1525 3695  1525 2095
-            2625 2095  2625 1495  4725 1495  4725 -2495  4125 -2495  4125 -2695
-            2625 -2695  2625 -3095  -2625 -3095))
-      (outline (path signal 120  -2235 1710  -1285 1710))
-      (outline (path signal 120  -2235 1260  -2235 1710))
-      (outline (path signal 120  -2235 -2260  -2235 -2710))
-      (outline (path signal 120  -2235 -2710  2235 -2710))
-      (outline (path signal 120  -1285 1710  -1285 3200))
-      (outline (path signal 120  2235 1710  1285 1710))
-      (outline (path signal 120  2235 1260  2235 1710))
-      (outline (path signal 120  2235 -2710  2235 -2260))
-      (outline (path signal 100  -3825 400  -3825 -1400))
-      (outline (path signal 100  -3825 -1400  -3625 -1600))
-      (outline (path signal 100  -3625 600  -3825 400))
-      (outline (path signal 100  -3625 -1600  -3625 -2200))
-      (outline (path signal 100  -3625 -2200  -2125 -2200))
-      (outline (path signal 100  -2125 1600  -2125 -2600))
-      (outline (path signal 100  -2125 1600  2125 1600))
-      (outline (path signal 100  -2125 600  -3625 600))
-      (outline (path signal 100  -2125 -2600  2125 -2600))
-      (outline (path signal 100  -1125 1600  -625 892.893))
-      (outline (path signal 100  -625 892.893  -125 1600))
-      (outline (path signal 100  2125 1600  2125 -2600))
-      (outline (path signal 100  2125 600  3625 600))
-      (outline (path signal 100  3625 600  3825 400))
-      (outline (path signal 100  3625 -1600  3625 -2200))
-      (outline (path signal 100  3625 -2200  2125 -2200))
-      (outline (path signal 100  3825 400  3825 -1400))
-      (outline (path signal 100  3825 -1400  3625 -1600))
-      (pin RoundRect[T]Pad_800.000000x1600.000000_200.761000_um_0.000000_0 1 -625 2400)
-      (pin RoundRect[T]Pad_800.000000x1600.000000_200.761000_um_0.000000_0 2 625 2400)
-      (pin RoundRect[T]Pad_2100.000000x3000.000000_250.952000_um_0.000000_0 MP -3175 -500)
-      (pin RoundRect[T]Pad_2100.000000x3000.000000_250.952000_um_0.000000_0 MP@1 3175 -500)
+    (image "echo-breakout:Molex_Pico-SPOX_87438-0243_1x02_P1.50mm_Horizontal"
+      (outline (polygon signal 0  -2395 5595  2395 5595  2395 -3120  -2395 -3120))
+      (outline (path signal 150  -2300 -3000  2300 -3000))
+      (outline (path signal 150  2300 3000  2300 -3000))
+      (outline (path signal 150  -2300 3000  -2300 -3000))
+      (outline (path signal 100  -2150 2875  2150 2875  2150 -2875  -2150 -2875  -2150 2875))
+      (pin Rect[T]Pad_850.000000x3550.000000_um @1 -750 150)
+      (pin Rect[T]Pad_850.000000x2650.000000_um 2 -750 4050)
+      (pin Rect[T]Pad_850.000000x3550.000000_um @2 750 150)
+      (pin Rect[T]Pad_850.000000x2650.000000_um 1 750 4050)
     )
     (image "SolderJumper-2_P1.3mm_Bridged_RoundedPad1.0x1.5mm"
       (outline (polygon signal 0  1645 -1245  -1645 -1245  -1645 1245  1645 1245))
@@ -660,6 +635,9 @@
     )
     (image "echo-breakout:Hirose_FH34SRJ-8S-0.5SH_1x08-1MP_P0.50mm_Horizontal"
       (outline (polygon signal 0  3245 2145  3245 -2145  -3245 -2145  -3245 2145))
+      (outline (path signal 150  3150 2050  3150 -700))
+      (outline (path signal 150  -3150 2050  -3150 -700))
+      (outline (path signal 150  -3150 2050  3150 2050))
       (outline (path signal 100  -3000 1900  -3000 -1900  3000 -1900  3000 1900  -3000 1900))
       (pin Rect[T]Pad_400.000000x800.000000_um MP 2750 -1350)
       (pin Rect[T]Pad_400.000000x800.000000_um MP@1 -2750 -1350)
@@ -721,7 +699,7 @@
       (pin Round[A]Pad_1700.000000_um 32 2540 -38100)
     )
     (image "Hirose_FH26-31S-0.3SHW_2Rows-31Pins-1MP_P0.60mm_Horizontal"
-      (outline (polygon signal 0  -2645 -5895  -2645 5895  2295 5895  2295 -5895))
+      (outline (polygon signal 0  2295 5895  2295 -5895  -2645 -5895  -2645 5895))
       (outline (path signal 120  -2622.13 4650  -2410 4500))
       (outline (path signal 120  -2622.13 4350  -2622.13 4650))
       (outline (path signal 120  -2410 4500  -2622.13 4350))
@@ -847,7 +825,7 @@
       (pin Round[A]Pad_1700.000000_um 24 2540 -27940)
     )
     (image "Hirose_FH26-23S-0.3SHW_2Rows-23Pins-1MP_P0.60mm_Horizontal"
-      (outline (polygon signal 0  -2645 -4695  -2645 4695  2295 4695  2295 -4695))
+      (outline (polygon signal 0  2295 4695  2295 -4695  -2645 -4695  -2645 4695))
       (outline (path signal 120  -2622.13 3450  -2410 3300))
       (outline (path signal 120  -2622.13 3150  -2622.13 3450))
       (outline (path signal 120  -2410 3300  -2622.13 3150))
@@ -975,7 +953,7 @@
       (pin Round[A]Pad_1700.000000_um 34 2540 -40640)
     )
     (image "Hirose_FH26-33S-0.3SHW_2Rows-33Pins-1MP_P0.60mm_Horizontal"
-      (outline (polygon signal 0  -2645 6195  2295 6195  2295 -6195  -2645 -6195))
+      (outline (polygon signal 0  2295 -6195  -2645 -6195  -2645 6195  2295 6195))
       (outline (path signal 120  -2622.13 4950  -2410 4800))
       (outline (path signal 120  -2622.13 4650  -2622.13 4950))
       (outline (path signal 120  -2410 4800  -2622.13 4650))
@@ -1097,15 +1075,6 @@
       (shape (circle B.Cu 700))
       (attach off)
     )
-    (padstack RoundRect[T]Pad_2100.000000x3000.000000_250.952000_um_0.000000_0
-      (shape (polygon F.Cu 0  -1050.95 1250  -1031.85 1346.03  -977.449 1427.45  -896.034 1481.85
-            -799.999 1500.95  799.999 1500.95  896.034 1481.85  977.449 1427.45
-            1031.85 1346.03  1050.95 1250  1050.95 -1250  1031.85 -1346.03
-            977.449 -1427.45  896.034 -1481.85  799.999 -1500.95  -799.999 -1500.95
-            -896.034 -1481.85  -977.449 -1427.45  -1031.85 -1346.03  -1050.95 -1250
-            -1050.95 1250))
-      (attach off)
-    )
     (padstack RoundRect[T]Pad_800.000000x950.000000_200.761000_um_0.000000_0
       (shape (polygon F.Cu 0  -400.761 275  -385.479 351.828  -341.959 416.959  -276.828 460.479
             -199.999 475.76  200 475.761  276.828 460.479  341.959 416.959
@@ -1113,15 +1082,6 @@
             341.959 -416.959  276.828 -460.479  199.999 -475.76  -200 -475.761
             -276.828 -460.479  -341.959 -416.959  -385.479 -351.828  -400.76 -274.999
             -400.761 275))
-      (attach off)
-    )
-    (padstack RoundRect[T]Pad_800.000000x1600.000000_200.761000_um_0.000000_0
-      (shape (polygon F.Cu 0  -400.761 600  -385.479 676.828  -341.959 741.959  -276.828 785.479
-            -199.999 800.76  200 800.761  276.828 785.479  341.959 741.959
-            385.479 676.828  400.76 599.999  400.761 -600  385.479 -676.828
-            341.959 -741.959  276.828 -785.479  199.999 -800.76  -200 -800.761
-            -276.828 -785.479  -341.959 -741.959  -385.479 -676.828  -400.76 -599.999
-            -400.761 600))
       (attach off)
     )
     (padstack RoundRect[T]Pad_875.000000x950.000000_219.582000_um_0.000000_0
@@ -1226,6 +1186,14 @@
       (shape (rect F.Cu -4200 -2100 4200 2100))
       (attach off)
     )
+    (padstack Rect[T]Pad_850.000000x2650.000000_um
+      (shape (rect F.Cu -425 -1325 425 1325))
+      (attach off)
+    )
+    (padstack Rect[T]Pad_850.000000x3550.000000_um
+      (shape (rect F.Cu -425 -1775 425 1775))
+      (attach off)
+    )
     (padstack Rect[T]Pad_950.000000x400.000000_um
       (shape (rect F.Cu -475 -200 475 200))
       (attach off)
@@ -1261,270 +1229,270 @@
     )
   )
   (network
-    (net J44_33
-      (pins P1-33 J44-1)
+    (net J44_01
+      (pins P1-1 J44-1)
     )
-    (net J44_32
-      (pins P1-32 J44-2)
+    (net J44_02
+      (pins P1-2 J44-2)
     )
-    (net J44_31
-      (pins P1-31 J44-3)
+    (net J44_03
+      (pins P1-3 J44-3)
     )
-    (net J44_30
-      (pins P1-30 J44-4)
+    (net J44_04
+      (pins P1-4 J44-4)
     )
-    (net J44_29
-      (pins P1-29 J44-5)
+    (net J44_05
+      (pins P1-5 J44-5)
     )
-    (net J44_28
-      (pins P1-28 J44-6)
+    (net J44_06
+      (pins P1-6 J44-6)
     )
-    (net J44_27
-      (pins P1-27 J44-7)
+    (net J44_07
+      (pins P1-7 J44-7)
     )
-    (net J44_26
-      (pins P1-26 J44-8)
+    (net J44_08
+      (pins P1-8 J44-8)
     )
-    (net J44_25
-      (pins P1-25 J44-9)
+    (net J44_09
+      (pins P1-9 J44-9)
     )
-    (net J44_24
-      (pins P1-24 J44-10)
+    (net J44_10
+      (pins P1-10 J44-10)
     )
-    (net J44_23
-      (pins P1-23 J44-11)
+    (net J44_11
+      (pins P1-11 J44-11)
     )
-    (net J44_22
-      (pins P1-22 J44-12)
+    (net J44_12
+      (pins P1-12 J44-12)
     )
-    (net J44_21
-      (pins P1-21 J44-13)
+    (net J44_13
+      (pins P1-13 J44-13)
     )
-    (net J44_20
-      (pins P1-20 J44-14)
+    (net J44_14
+      (pins P1-14 J44-14)
     )
-    (net J44_19
-      (pins P1-19 J44-15)
+    (net J44_15
+      (pins P1-15 J44-15)
     )
-    (net J44_18
-      (pins P1-18 J44-16)
+    (net J44_16
+      (pins P1-16 J44-16)
     )
     (net J44_17
       (pins P1-17 J44-17)
     )
-    (net J44_16
-      (pins P1-16 J44-18)
+    (net J44_18
+      (pins P1-18 J44-18)
     )
-    (net J44_15
-      (pins P1-15 J44-19)
+    (net J44_19
+      (pins P1-19 J44-19)
     )
-    (net J44_14
-      (pins P1-14 J44-20)
+    (net J44_20
+      (pins P1-20 J44-20)
     )
-    (net J44_13
-      (pins P1-13 J44-21)
+    (net J44_21
+      (pins P1-21 J44-21)
     )
-    (net J44_12
-      (pins P1-12 J44-22)
+    (net J44_22
+      (pins P1-22 J44-22)
     )
-    (net J44_11
-      (pins P1-11 J44-23)
+    (net J44_23
+      (pins P1-23 J44-23)
     )
-    (net J44_10
-      (pins P1-10 J44-24)
+    (net J44_24
+      (pins P1-24 J44-24)
     )
-    (net J44_09
-      (pins P1-9 J44-25)
+    (net J44_25
+      (pins P1-25 J44-25)
     )
-    (net J44_08
-      (pins P1-8 J44-26)
+    (net J44_26
+      (pins P1-26 J44-26)
     )
-    (net J44_07
-      (pins P1-7 J44-27)
+    (net J44_27
+      (pins P1-27 J44-27)
     )
-    (net J44_06
-      (pins P1-6 J44-28)
+    (net J44_28
+      (pins P1-28 J44-28)
     )
-    (net J44_05
-      (pins P1-5 J44-29)
+    (net J44_29
+      (pins P1-29 J44-29)
     )
-    (net J44_04
-      (pins P1-4 J44-30)
+    (net J44_30
+      (pins P1-30 J44-30)
     )
-    (net J44_03
-      (pins P1-3 J44-31)
+    (net J44_31
+      (pins P1-31 J44-31)
     )
-    (net J44_02
-      (pins P1-2 J44-32)
+    (net J44_32
+      (pins P1-32 J44-32)
     )
-    (net J44_01
-      (pins P1-1 J44-33)
+    (net J44_33
+      (pins P1-33 J44-33)
     )
     (net GND
       (pins TP2-1 TP1-1 D1-1 C2-2 C1-2 P6-2 U1A-2 P5-3 J30-MP J30-MP@1 P2-32 J46-MP
         J46-MP@1 P3-24 J100-MP J100-MP@1 P1-34 J44-MP J44-MP@1)
     )
-    (net J100_23
-      (pins P3-23 J100-1)
+    (net J100_01
+      (pins P3-1 J100-1)
     )
-    (net J100_22
-      (pins P3-22 J100-2)
+    (net J100_02
+      (pins P3-2 J100-2)
     )
-    (net J100_21
-      (pins P3-21 J100-3)
+    (net J100_03
+      (pins P3-3 J100-3)
     )
-    (net J100_20
-      (pins P3-20 J100-4)
+    (net J100_04
+      (pins P3-4 J100-4)
     )
-    (net J100_19
-      (pins P3-19 J100-5)
+    (net J100_05
+      (pins P3-5 J100-5)
     )
-    (net J100_18
-      (pins P3-18 J100-6)
+    (net J100_06
+      (pins P3-6 J100-6)
     )
-    (net J100_17
-      (pins P3-17 J100-7)
+    (net J100_07
+      (pins P3-7 J100-7)
     )
-    (net J100_16
-      (pins P3-16 J100-8)
+    (net J100_08
+      (pins P3-8 J100-8)
     )
-    (net J100_15
-      (pins P3-15 J100-9)
+    (net J100_09
+      (pins P3-9 J100-9)
     )
-    (net J100_14
-      (pins P3-14 J100-10)
+    (net J100_10
+      (pins P3-10 J100-10)
     )
-    (net J100_13
-      (pins P3-13 J100-11)
+    (net J100_11
+      (pins P3-11 J100-11)
     )
     (net J100_12
       (pins P3-12 J100-12)
     )
-    (net J100_11
-      (pins P3-11 J100-13)
+    (net J100_13
+      (pins P3-13 J100-13)
     )
-    (net J100_10
-      (pins P3-10 J100-14)
+    (net J100_14
+      (pins P3-14 J100-14)
     )
-    (net J100_09
-      (pins P3-9 J100-15)
+    (net J100_15
+      (pins P3-15 J100-15)
     )
-    (net J100_08
-      (pins P3-8 J100-16)
+    (net J100_16
+      (pins P3-16 J100-16)
     )
-    (net J100_07
-      (pins P3-7 J100-17)
+    (net J100_17
+      (pins P3-17 J100-17)
     )
-    (net J100_06
-      (pins P3-6 J100-18)
+    (net J100_18
+      (pins P3-18 J100-18)
     )
-    (net J100_05
-      (pins P3-5 J100-19)
+    (net J100_19
+      (pins P3-19 J100-19)
     )
-    (net J100_04
-      (pins P3-4 J100-20)
+    (net J100_20
+      (pins P3-20 J100-20)
     )
-    (net J100_03
-      (pins P3-3 J100-21)
+    (net J100_21
+      (pins P3-21 J100-21)
     )
-    (net J100_02
-      (pins P3-2 J100-22)
+    (net J100_22
+      (pins P3-22 J100-22)
     )
-    (net J100_01
-      (pins P3-1 J100-23)
+    (net J100_23
+      (pins P3-23 J100-23)
     )
-    (net J46_31
-      (pins P2-31 J46-1)
+    (net J46_01
+      (pins P2-1 J46-1)
     )
-    (net J46_30
-      (pins P2-30 J46-2)
+    (net J46_02
+      (pins P2-2 J46-2)
     )
-    (net J46_29
-      (pins P2-29 J46-3)
+    (net J46_03
+      (pins P2-3 J46-3)
     )
-    (net J46_28
-      (pins P2-28 J46-4)
+    (net J46_04
+      (pins P2-4 J46-4)
     )
-    (net J46_27
-      (pins P2-27 J46-5)
+    (net J46_05
+      (pins P2-5 J46-5)
     )
-    (net J46_26
-      (pins P2-26 J46-6)
+    (net J46_06
+      (pins P2-6 J46-6)
     )
-    (net J46_25
-      (pins P2-25 J46-7)
+    (net J46_07
+      (pins P2-7 J46-7)
     )
-    (net J46_24
-      (pins P2-24 J46-8)
+    (net J46_08
+      (pins P2-8 J46-8)
     )
-    (net J46_23
-      (pins P2-23 J46-9)
+    (net J46_09
+      (pins P2-9 J46-9)
     )
-    (net J46_22
-      (pins P2-22 J46-10)
+    (net J46_10
+      (pins P2-10 J46-10)
     )
-    (net J46_21
-      (pins P2-21 J46-11)
+    (net J46_11
+      (pins P2-11 J46-11)
     )
-    (net J46_20
-      (pins P2-20 J46-12)
+    (net J46_12
+      (pins P2-12 J46-12)
     )
-    (net J46_19
-      (pins P2-19 J46-13)
+    (net J46_13
+      (pins P2-13 J46-13)
     )
-    (net J46_18
-      (pins P2-18 J46-14)
+    (net J46_14
+      (pins P2-14 J46-14)
     )
-    (net J46_17
-      (pins P2-17 J46-15)
+    (net J46_15
+      (pins P2-15 J46-15)
     )
     (net J46_16
       (pins P2-16 J46-16)
     )
-    (net J46_15
-      (pins P2-15 J46-17)
+    (net J46_17
+      (pins P2-17 J46-17)
     )
-    (net J46_14
-      (pins P2-14 J46-18)
+    (net J46_18
+      (pins P2-18 J46-18)
     )
-    (net J46_13
-      (pins P2-13 J46-19)
+    (net J46_19
+      (pins P2-19 J46-19)
     )
-    (net J46_12
-      (pins P2-12 J46-20)
+    (net J46_20
+      (pins P2-20 J46-20)
     )
-    (net J46_11
-      (pins P2-11 J46-21)
+    (net J46_21
+      (pins P2-21 J46-21)
     )
-    (net J46_10
-      (pins P2-10 J46-22)
+    (net J46_22
+      (pins P2-22 J46-22)
     )
-    (net J46_09
-      (pins P2-9 J46-23)
+    (net J46_23
+      (pins P2-23 J46-23)
     )
-    (net J46_08
-      (pins P2-8 J46-24)
+    (net J46_24
+      (pins P2-24 J46-24)
     )
-    (net J46_07
-      (pins P2-7 J46-25)
+    (net J46_25
+      (pins P2-25 J46-25)
     )
-    (net J46_06
-      (pins P2-6 J46-26)
+    (net J46_26
+      (pins P2-26 J46-26)
     )
-    (net J46_05
-      (pins P2-5 J46-27)
+    (net J46_27
+      (pins P2-27 J46-27)
     )
-    (net J46_04
-      (pins P2-4 J46-28)
+    (net J46_28
+      (pins P2-28 J46-28)
     )
-    (net J46_03
-      (pins P2-3 J46-29)
+    (net J46_29
+      (pins P2-29 J46-29)
     )
-    (net J46_02
-      (pins P2-2 J46-30)
+    (net J46_30
+      (pins P2-30 J46-30)
     )
-    (net J46_01
-      (pins P2-1 J46-31)
+    (net J46_31
+      (pins P2-31 J46-31)
     )
     (net J30_8
       (pins P4-8 J30-1)
@@ -1619,11 +1587,11 @@
     (net PU_SCL
       (pins JP2-1 R8-2)
     )
-    (net SPK_1
-      (pins P8-1 J2-1)
-    )
     (net SPK_2
-      (pins P8-2 J2-2)
+      (pins P8-2 J2-1)
+    )
+    (net SPK_1
+      (pins P8-1 J2-2)
     )
     (class kicad_default IO0 IO1 IO10 IO2 IO20 IO21 IO3 IO4 IO5 IO6 IO7 IO8
       IO9 J100_01 J100_02 J100_03 J100_04 J100_05 J100_06 J100_07 J100_08

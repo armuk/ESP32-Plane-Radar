@@ -16,8 +16,19 @@ _spec.loader.exec_module(rules)
 # lands a track 0.1994 mm from a pad. Check the finished board at 0.19 mm (the fab limit is 0.127).
 POWER_CLEARANCE = 0.19
 rules.apply_rules(board, POWER_CLEARANCE)
+# The session file also carries each footprint's position, and the import applies it. Keep the
+# generator's placement: a part moved in gen_board.py since the last autoroute must stay moved.
+placed = {fp.GetReference(): (fp.GetPosition(), fp.GetOrientationDegrees()) for fp in board.GetFootprints()}
 if not pcbnew.ImportSpecctraSES(board, os.path.join(HERE, 'echo-breakout.ses')):
     raise SystemExit('SES import failed')
+for fp in board.GetFootprints():
+    pos, rot = placed[fp.GetReference()]
+    moved = max(abs(fp.GetPosition().x - pos.x), abs(fp.GetPosition().y - pos.y))
+    if moved or abs(fp.GetOrientationDegrees() - rot) > 0.01:
+        if moved > 1000:     # more than a micron: a real move, not rounding
+            print('placement restored from the generator:', fp.GetReference())
+        fp.SetOrientationDegrees(rot)
+        fp.SetPosition(pos)
 
 
 def remove_dangling(board):
@@ -71,6 +82,31 @@ def remove_dangling_kicad(board):
         removed += len(dead)
 
 
+def route_speaker(board):
+    """Lay the two speaker tracks by hand, replacing whatever the autorouter drew for them: J2's tail
+    lands to P8, in a corridor nothing else uses. Fixed, so J2 can change without a full re-route."""
+    for t in list(board.GetTracks()):
+        if t.GetNetname() in ('SPK_1', 'SPK_2'):
+            board.Delete(t)
+    j2 = board.FindFootprintByReference('J2')
+    p8 = board.FindFootprintByReference('P8')
+    for net, lane in (('SPK_1', 9.6), ('SPK_2', 10.5)):
+        a = [p for p in j2.Pads() if p.GetNetname() == net][0].GetPosition()
+        b = [p for p in p8.Pads() if p.GetNetname() == net][0].GetPosition()
+        ax, ay, bx, by = (pcbnew.ToMM(v) for v in (a.x, a.y, b.x, b.y))
+        d = 0.55
+        pts = [(ax, ay), (ax, lane - d), (ax + d, lane), (bx - d, lane), (bx, lane - d), (bx, by)]
+        for p, q in zip(pts, pts[1:]):
+            t = pcbnew.PCB_TRACK(board)
+            t.SetStart(pcbnew.VECTOR2I_MM(*p))
+            t.SetEnd(pcbnew.VECTOR2I_MM(*q))
+            t.SetWidth(mm(0.4))
+            t.SetLayer(pcbnew.F_Cu)
+            t.SetNet(board.FindNet(net))
+            board.Add(t)
+
+
+route_speaker(board)
 if not os.environ.get('NO_CLEAN'):
     print('removed dangling segments:', remove_dangling(board))
     print('removed dangling segments (KiCad check):', remove_dangling_kicad(board))
@@ -110,3 +146,25 @@ out = os.path.join(HERE, 'echo-breakout.kicad_pcb')
 pcbnew.SaveBoard(out, board)
 rules.write_project(out, POWER_CLEARANCE)
 print('saved', out, 'tracks', len(board.GetTracks()))
+
+# Placement file for JLCPCB: every part in the BOM, at its body centre (KiCad anchors a pin header on
+# pin 1, JLCPCB on the middle of the part). Y is negative down the board, as KiCad exports it.
+import csv
+with open(os.path.join(HERE, 'jlcpcb', 'bom.csv')) as fh:
+    in_bom = {r for row in csv.DictReader(fh) for r in row['Designator'].split(',')}
+with open(os.path.join(HERE, 'jlcpcb', 'cpl.csv'), 'w') as fh:
+    fh.write('Designator,Mid X,Mid Y,Layer,Rotation\n')
+    for fp in sorted(board.GetFootprints(), key=lambda q: q.GetReference()):
+        if fp.GetReference() not in in_bom:
+            continue
+        tht = any(p.GetAttribute() == pcbnew.PAD_ATTRIB_PTH for p in fp.Pads())
+        if tht:
+            xs = [p.GetPosition().x for p in fp.Pads()]
+            ys = [p.GetPosition().y for p in fp.Pads()]
+            x, y = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2
+        else:
+            x, y = fp.GetPosition().x, fp.GetPosition().y
+        fh.write('%s,%.6fmm,%.6fmm,Top,%.6f\n' % (fp.GetReference(), pcbnew.ToMM(x), -pcbnew.ToMM(y),
+                                                 fp.GetOrientationDegrees()))
+print('placement file:', len(in_bom), 'parts')
+

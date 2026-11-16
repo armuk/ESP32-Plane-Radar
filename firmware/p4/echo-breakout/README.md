@@ -27,11 +27,11 @@ its ribbon-facing edge at the original's position. To work with the board outsid
 
 | Socket | Part (LCSC) | Position (mm from the top-left corner) | Broken out to |
 |---|---|---|---|
-| **J44** display | Hirose FH26W-33S-0.3SHW(60) (C424654) | Ribbon edge x = 4.2, centred y = 39.0, opening left | P1, 2 × 17 |
+| **J44** display | Hirose FH26W-33S-0.3SHW(60) (C424654) | Body edge x = 4.2, centred y = 39.0, lock side left | P1, 2 × 17 |
 | **J30** touch | Hirose FH34SRJ-8S-0.5SH(50) (C88372) | Front face x = 15.1, centred y = 53.8, opening left | P4, 1 × 8 |
-| **J100** top board | Hirose FH26W-23S-0.3SHW(60) (C3168948) | Ribbon edge y = 4.4, centred x = 22.4, opening up | P3, 2 × 12 |
-| **J46** IO board | Hirose FH26W-31S-0.3SHW(60) (C2973806) | Ribbon edge y = 4.5, centred x = 42.0, opening up | P2, 2 × 16 |
-| **J2** speaker | Molex PicoBlade 53261-0271 (C177225) | Top edge at x = 82.4, as on the mainboard | P8, 1 × 2 (top-right corner) |
+| **J100** top board | Hirose FH26W-23S-0.3SHW(60) (C3168948) | Body edge y = 4.5, centred x = 22.4, lock side up | P3, 2 × 12 |
+| **J46** IO board | Hirose FH26W-31S-0.3SHW(60) (C2973806) | Body edge y = 4.4, centred x = 42.0, lock side up | P2, 2 × 16 |
+| **J2** speaker | Molex Pico-SPOX 87438-0243 (C240853) | Centred x = 82.0, mating face 0.6 mm from the top edge, as on the mainboard | P8, 1 × 2 (top-right corner) |
 
 How to read the headers:
 - **Header pin n = Echo pin n** on every header, using the mainboard's own silkscreen pin 1:
@@ -42,13 +42,17 @@ How to read the headers:
 **Mounting:**
 - Six 2.6 mm plated holes at the original screw positions, assumed M2. The positions were measured
   from ruler photos of the mainboard (see "Measuring the screw holes" below). An M2 screw can sit up to
-  0.3 mm off-centre in a 2.6 mm hole, and an M2 pan head (3.8 mm) still covers it.
+  0.3 mm off-centre in a 2.6 mm hole, and the screw head still covers it (the Echo's screws have 3.5 mm heads and are 5.1 mm long).
 - **Each hole sits in an exposed, grounded copper pad** on both faces, as on the mainboard: 4.8 mm
   across (3.6 mm at S4, where the board edge is close). The screw head bears on the pad, not on
   solder mask, and the screw ties the board's ground to the case post.
 - No tracks or vias within 2.6 mm of any hole centre on the outer layers (rule areas `SCREW_H1`–`H6`).
   The head reaches 1.9 mm out, or 2.2 mm with the screw fully off-centre.
 - Screw S4 (bottom edge) is only 2.1 mm from the edge.
+- **J44, J46 and J100 are Hirose FH26W sockets, the same way round as the mainboard's.** The ribbon
+  enters on the lock side, which faces the board edge. Lift the lock, lay the ribbon in with its contacts
+  as it sat in the Echo, and press the lock down onto it. The mainboard's J46 carries Hirose's mark on
+  its lock and matches the FH26W-31 in size, leg counts (16 at the edge, 15 inboard) and end tabs.
 - **J30 is a Hirose FH34SRJ-8S-0.5SH, at the mainboard socket's own position.** The mainboard's
   socket matches that part on every measured point: 6.0 mm wide, 3.8 mm deep, back-flip lock on the leg
   side, 0.3 mm ribbon, and a ribbon with 1.5 mm of bare contact and its insertion line at 1.5 mm.
@@ -60,7 +64,7 @@ How to read the headers:
     in to its white line, then press the lock down.
 - **Bare ground pads.** The mainboard grounds to its surroundings through bare gold pads, and the
   breakout has the same ones. Keep them all bare: no tape, no flux residue.
-  - **GP1, top, left of J30** (x 1.0–11.0, y 46.0–59.0): the touch ribbon lies across it. Four plated
+  - **GP1, top, left of J30** (x 1.0–11.5, y 46.0–59.0): the touch ribbon lies across it. Four plated
     holes tie it to the ground pours on every layer.
   - **GP2, top-left corner** (x 0.6–9.0, y 0.6–4.8, with a sliver down the display edge to a second
     patch at y 12.4–14.0): the metal-mesh tape from the button/mic board sticks here.
@@ -68,7 +72,7 @@ How to read the headers:
     GB7–GB9), plus GB1 under the J30 corner, where the GT911's ground pad rests, and GB6 on the
     display edge. No through-hole part sits inside any of them. Positions are in `BACK_PADS` in
     `gen_board.py`.
-- **Two 2.9 mm alignment holes** for the case's locating pegs: A1 at 3.1, 16.8 (by the original's J45)
+- **Two 2.5 mm alignment holes**, as on the mainboard, for the case's 1.8–1.9 mm locating pegs: A1 at 3.1, 16.8 (by the original's J45)
   and A2 at 93.4, 17.05 (by the original's part-number print). The mainboard's are about 2.5 mm.
 
 **ESP32 section** (for the touch test, and for buttons, LEDs and ADC readings later):
@@ -156,23 +160,36 @@ Steps:
 
 1. Upload the zip. Settings:
    - **4 layers** (two layers couldn't fit the fan-out from the 0.3 mm sockets in the mainboard
-     outline), 1.6 mm, JLC's default 4-layer stackup.
+     outline), **1.0 mm thick** like the mainboard (the ribbons wrap its edge, so a thicker board uses up
+     ribbon length), JLC's default 4-layer stackup for that thickness.
    - 108 × 60 mm.
    - ENIG recommended (flatter pads for the 0.3 mm sockets).
 2. Turn on **PCB Assembly**, top side, and upload the BOM and CPL.
 3. **Check every part's rotation in JLCPCB's placement preview**, above all the four ribbon sockets:
    - Each socket's pin 1 mark must match the board.
-   - The opening must face the board edge: left for J44 and J30, up for J100 and J46.
-   - **J30's footprint is this project's own**, so JLCPCB's rotation for it is the least certain:
-     its eight legs must be on the right, away from the display edge.
+   - **J44, J46 and J100 (FH26W):** the dark flip lock, the two metal end tabs and the larger leg row
+     must be at the board edge, with the smaller leg row inboard. The ribbon enters on the lock side.
+     Earlier versions of this board had them the other way round.
+   - **J30 (FH34SRJ):** the opposite: its legs and lock are inboard, and the ribbon enters on the plain
+     side facing the display edge.
+   - **J30's and J2's footprints are this project's own**, so JLCPCB's rotation for them is the least
+     certain. J30's eight legs must be on the right, away from the display edge. J2's two tails must
+     point down the board, with its open mouth at the top edge.
 4. **J100 (C3168948) was out of stock at LCSC on 2026-11-15.** Either:
    - pre-order it through JLC's global sourcing, or
    - mark J100 "do not place" and fit it yourself. It's a 0.3 mm part, but each of its two rows is 0.6 mm
      pitch: use flux and drag soldering, or hot air.
-5. Solder the through-hole parts yourself; they're not in the BOM:
-   - pin headers: 2 × 17, 2 × 16, 2 × 12, 3 × 1 × 8, 1 × 7, 1 × 2
-   - two 1 × 8 female sockets
-   - two GND test loops
+5. **Through-hole parts are in the BOM too**, so JLCPCB fits the headers and the two ESP32 sockets
+   (Kinghelm 2.54 mm straight parts):
+   - This needs their through-hole assembly, which is priced per joint; there are about 150 joints.
+   - Check each header's position and rotation in the placement preview. `cpl.csv` gives the centre of
+     each part, which is what JLCPCB expects, but their library part may sit a quarter-turn off.
+   - Stock on the less common sizes (2 × 12, 2 × 16, 2 × 17) is sometimes low. If one is short, mark
+     it "do not place" and solder it yourself.
+   - **The pins stand about 2 mm proud of the back.** Trim them flush before fitting the board in the
+     Echo: the back faces the display frame and its conductive gaskets.
+6. Left for you: the two GND test loops (TP1, TP2) are bare plated holes; solder in a wire loop or clip
+   onto a screw pad instead.
 
 DRC (KiCad 10): 0 unconnected items. No violations. The rules are 0.15 mm tracks and clearance, 0.4 mm power tracks and 0.3/0.6 mm
 vias, and silkscreen strokes of at least 0.15 mm, all within JLCPCB's standard limits.

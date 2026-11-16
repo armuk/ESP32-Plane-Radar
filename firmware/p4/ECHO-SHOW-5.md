@@ -425,17 +425,17 @@ alert sounds.
 Measured DC resistance: **6.2 Ω**, so a nominal **8 Ω** speaker (a speaker's DC resistance is usually
 about 75–80% of its rated impedance).
 
-J2: **Molex PicoBlade**, 1.25 mm pitch, 2 circuits (confirmed from photos: no latch arm on the plug,
-just friction and a polarising ledge). The header on the mainboard is a **right-angle surface-mount**
-type, with its legs lying flat on two pads marked 1 and 2, at the board's edge next to C9211. Molex's
-2-circuit right-angle SMT PicoBlade header (53261-0271) or a compatible part takes the original lead
-unchanged *(check the footprint against the datasheet)*.
+J2: **Molex Pico-SPOX**, 1.5 mm pitch, 2 circuits (measured from the ruler photos and matched to
+Molex's drawings on 2026-11-16; an earlier reading of 1.25 mm PicoBlade was wrong). The plug has no latch
+arm, just a friction ramp and a polarising ledge. The header on the mainboard is a **right-angle
+surface-mount** type with no metal side tabs, its legs lying flat on two pads marked 1 and 2, at the
+board's edge next to C9211. Molex's 87438-0243 header takes the original lead unchanged.
 
 | Pitch | Common families (2-pin) |
 |---|---|
 | 1.0 mm | JST SH |
 | 1.25 mm | Molex PicoBlade, JST GH |
-| 1.5 mm | JST ZH |
+| 1.5 mm | **Molex Pico-SPOX** (this one), JST ZH |
 | 2.0 mm | JST PH |
 | 2.5 mm | JST XH |
 
@@ -501,7 +501,7 @@ Pitch = centre-to-centre distance from the first contact to the last ÷ (pins �
 
 | Ribbon (mainboard socket) | Pins | First-to-last contact, centre to centre (mm) | Tail width (mm) | Thickness at contacts (mm) | Contacts face | Pitch |
 |---|---|---|---|---|---|---|
-| Display (J44) | 33 | 9.17 (rough) | 10.5 | 0.2 | Towards the board | **0.3 mm**: the width matches a standard 33-pin 0.3 mm tail (33 × 0.3 + 0.6 = 10.5); 9.17 is a little under the 9.6 expected, within hand-measuring error |
+| Display (J44) | 33 | 9.17 (rough) | **10.24** by caliper (2026-11-16); a first reading of 10.5 was rough | 0.2 | Towards the board | **0.3 mm**: Hirose's FH26 ribbon for 33 pins is 10.2 mm wide (33 × 0.3 + 0.3); 9.17 is a little under the 9.6 expected, within hand-measuring error |
 | IO board cable (J46) | 31 | 9.0 | 9.5 | 0.2 | Towards the board | **0.3 mm** (9.0 ÷ 30) |
 | Top board cable (J100) | 23 | 6.5 | 7.25 | 0.2 | Towards the board | **0.3 mm** (6.5 ÷ 22 ≈ 0.295) |
 | Touch (J30) | 8 | 3.5 | | 0.3 | Towards the board | **0.5 mm** (3.5 ÷ 7). A first reading of 4.5 mm had included the wide ground tabs at each end |
@@ -542,7 +542,7 @@ socket swaps pin 1 and pin 33 (or 1 and 8), and the ribbon then meets the wrong 
 | Outline, width × height | **108 × 60** |
 | Overall height, tallest point | **8.8**, at the electrolytic capacitor (C9211) next to the speaker connector |
 | Overall height over the shielded processors | **3.1** |
-| PCB thickness alone | |
+| PCB thickness alone | **1.0** (caliper, 2026-11-16) |
 | Mounting holes (centre, from one named corner) | From two photos, see "Positions from the photos" below |
 | Each connector's position (pin 1 end, from the same corner) | From two photos, see "Positions from the photos" below |
 | Tallest part: shield can height above the board | |
@@ -571,12 +571,12 @@ display ribbon.
 
 | Feature | Centre x, y (mm) | Body (mm) | Orientation |
 |---|---|---|---|
-| **J44** display, 33 pins | 6.2, 39.0 | 4 × 12 | Opening faces the **left** edge (ribbon arrives from the left, about 4 mm in). **Pin 1 at the top (−y) end**, 33 at the bottom (silkscreen) |
+| **J44** display, 33 pins | 6.2, 39.0 | 4 × 12 | Lock side faces the **left** edge (ribbon arrives from the left; body edge 4.2 mm in). **Pin 1 at the top (−y) end**, 33 at the bottom (silkscreen) |
 | **J30** touch, 8 pins | 17.1, 53.8 | 4–5 × 6.4 (with leads) | Opening (under the white actuator) faces the **left** edge; the solder legs are on the right. So the touch ribbon reaches about 15 mm in. **Pin 1 at the top (−y) end**, 8 at the bottom (silkscreen, from close-up photos) |
-| **J100** top board, 23 pins | 22.4, 6.4 | 9 × 4 | Opening faces the **top** edge. **Pin 1 at the right (+x) end**, 23 at the left (silkscreen) |
-| **J46** IO board, 31 pins | 42.0, 6.5 | 11.5 × 4 | Opening faces the **top** edge. **Pin 1 at the right (+x) end**, 31 at the left (silkscreen) |
+| **J100** top board, 23 pins | 22.4, 6.4 | 9 × 4 | Lock side faces the **top** edge. **Pin 1 at the right (+x) end**, 23 at the left (silkscreen) |
+| **J46** IO board, 31 pins | 42.0, 6.5 | 11.5 × 4 | Lock side faces the **top** edge. **Pin 1 at the right (+x) end**, 31 at the left (silkscreen) |
 | **J45** camera, 25 pins | about 6, 10 | | Opening faces left. Pin 1 at the bottom, 25 at the top (silkscreen) |
-| **J2** speaker (PicoBlade) | 82.4, 2.7 | about 5 × 6 | At the top edge, beside C9211 |
+| **J2** speaker (Pico-SPOX) | 82.0, 3.5 | 4.3 × 5.75 | At the top edge, beside C9211 |
 | Screw S1 | 30.35, 6.45 | | Between J100 and J46 |
 | Screw S2 | 65.8, 2.85 | | Top edge |
 | Screw S3 | 2.8, 29.9 | | Left edge, above J44 |
@@ -612,8 +612,65 @@ S6 agrees with the hand reading of 2026-11-15 (3 mm from the right edge, 31 mm f
 
 **Sockets in the same photos (rougher: the legs are harder to pick than a hole):**
 - **J44:** rear leg row at 7.9–8.0, 39.1; the breakout has 7.92, 39.0.
-- **J100 and J46:** rear leg rows 8.2–8.3 mm from the cable edge, matching the breakout. Along the edge
-  the readings were 0.4–0.6 mm towards the display side of the breakout's positions: unconfirmed.
+- **J100 and J46:** rear leg rows 8.2–8.3 mm from the cable edge, matching the breakout. J46's rear row
+  is 16 legs at 0.61 mm pitch, centred at 42.1 mm (the breakout has 42.0). A first by-eye reading that put
+  both sockets 0.4–0.6 mm off along the edge was wrong for J46; J100 isn't re-measured.
+
+**The three 0.3 mm ribbons checked against the FH26W (2026-11-16):**
+
+| | J44 (33) | J46 (31) | J100 (23) | FH26W |
+|---|---|---|---|---|
+| Tip goes into the old socket | 2.5 mm | about 2.45 mm | 2.5 mm | 2.5 ± 0.3 mm of bare contact |
+| Stiffened tongue | 6.5 mm | 7.5 mm | 6.5 mm | 3.5 mm or more |
+| Old socket width, lock closed | 11.55 mm | 11.55 mm (to re-measure) | about 8.5 mm | 11.4 / 10.8 / 8.4 mm |
+| Old socket depth with legs | 3.5 mm | about 3.6 mm | about 3.6 mm | 3.2 mm |
+| Ribbon tip width | 10.24 mm | 9.5 mm | 7.25 mm | 10.2 / 9.6 / 7.2 mm |
+
+- **Contact pattern (microscope, J44, J46 and J100):** two staggered rows of pads, the row at the tip holding
+  the two edge pads, with each tip pad's thin lead running back between two rear pads. That is Hirose's
+  recommended FH26 ribbon. Contacts face the board.
+- **J100's ribbon:** 12 pads in the tip row and 11 behind, 23 in all, and about 7.1 mm wide against a
+  rule in the same image. It is printed `J2`, its connector's name on the top board; that isn't the
+  mainboard's J2 (the speaker).
+- **Leg pitch on the old sockets:** 0.60–0.61 mm on all three, in both ruler photos.
+- **J30's ribbon tip (microscope):** eight straight fingers in a single row, bare from a sharp coverlay
+  line to the tip, on a short tongue with shoulders behind it. That is the FH34SRJ's ribbon, not the
+  staggered FH26 kind. The contact wear marks sit in the half nearest the tip, as a 1.5 mm insertion
+  would leave them. The two outer fingers are wider and run straight into broad copper at the edges,
+  which supports pins 1 and 8 being ground.
+- **Which way round the FH26W sockets sit (microscope, J46, lock closed and open):** the dark flip lock
+  (with Hirose's triangle and logo), a row of 16 legs and a metal tab at each end are on the board-edge
+  side; a row of 15 legs is inboard. The ribbon enters on the lock side. J44 follows the same pattern:
+  its inboard leg tips are at 7.9–8.0 mm, which is the smaller row's 0.5 mm leads on a body starting at
+  4.2 mm. Earlier versions of the breakout and the extenders had these sockets the other way round.
+- **By caliper (2026-11-16):** socket body edge from the board edge: J44 4.2 mm, J100 4.5 mm, J46 4.4 mm,
+  J30 15.1 mm. J100's body runs from 17.5–17.75 to 27 mm from the display edge (centre about 22.3).
+  J46 is 10.9–11.0 mm wide at the board and 10.6 mm at the lock (the earlier 11.55 was wrong).
+- **Mechanical (2026-11-16):** board 1.0 mm thick; screws 3.5 mm across the head and 5.1 mm long
+  including it; alignment pegs 1.8–1.9 mm. The frame's gaskets look about 2–3 mm tall uncompressed;
+  not measured.
+- **Speaker (J2): Molex Pico-SPOX, 1.5 mm pitch.** The header is an 87438-0243 and the plug an
+  87439-0200 housing with 87421 crimp terminals. Measured: leads 1.50 and 1.53 mm apart in the two
+  flattened ruler photos, housing about 4.5 mm wide and 5.4 mm deep, no metal side tabs. Molex: header
+  4.3 mm wide, 5.75 mm deep (7.75 mm with tails), 4.45 mm high; plug 4.1 mm wide, 6.2 mm long, 3.35 mm
+  high; 9.4 mm long mated. It is not a 1.25 mm PicoBlade, as first assumed. The drawings are in
+  `parts-documentation/` (`874380243_sd.pdf`, `874390200_sd.pdf`).
+- **J46's ribbon, plugged in (microscope):** it enters on the lock side, from the board edge. The face
+  that shows is the covered one, with traces and vias under the orange cover layer; the bare staggered
+  pads are on the other face, against the board. So it is bottom contact, as Hirose lists the FH26W.
+
+**Still to capture on the mainboard:**
+- [ ] Ground pins: beep every pin of J44, J46, J100 and J30 against a screw pad; note which are ground.
+      On J30, check pins 1 and 8.
+- [ ] 12 V pins on J46: beep from the barrel jack's centre pin on the IO board, through the cable.
+- [ ] The two damaged parts at J30's pin 1 end: resistance across each, against the matching parts on
+      the other lines.
+- [ ] Speaker plug, by caliper, against Molex's 87439-0200: 4.1 mm wide, 6.2 mm long, 3.35 mm high.
+- [ ] Height from the board's component face to the rear case (for the final board, not this one).
+
+- **Verdict:** the FH26W suits all three ribbons. Open: J46's socket width reads 0.75 mm over an
+  FH26W-31, though its 16 rear legs are the 31-pin count; and the sockets read 0.3–0.4 mm deep.
+  Neither changes where the ribbon lands.
 - **J30:** the solder legs are 18.2–18.7 mm from the display edge and the body is only about 3.4 mm
   deep, with its mouth at about 15 mm. The breakout's FH12 has its mouth at the same place but is
   5.6 mm deep, legs at 21.7 mm. So the touch ribbon must slide roughly 1.5–2 mm further in to reach the
@@ -840,7 +897,7 @@ anything else: J44 17.5 mm, J30 about the same, J100 23 mm, J46 44 mm. Socket po
 | J46/J4 | Hirose FH26W-31S-0.3SHW (C2973806) | 2 × 16 (last pin GND) |
 | J100 | Hirose FH26W-23S-0.3SHW (C3168948) | 2 × 12 (last pin GND) |
 | J30 | Hirose FH34SRJ-8S-0.5SH (C88372) | 1 × 8 |
-| Speaker (J2) | Molex PicoBlade 53261-0271 (C177225) | 1 × 2 |
+| Speaker (J2) | Molex Pico-SPOX 87438-0243 (C240853) | 1 × 2 |
 
 Header pin numbers are the **Echo's** pin numbers (mainboard silkscreen pin 1) on every header,
 J30 included.
@@ -857,7 +914,7 @@ It also carries:
 
 Notes:
 - The screw holes are 2.6 mm plated holes in grounded copper pads, at positions re-measured from ruler
-  photos on 2026-11-16 (two photos agree within 0.2 mm). Two 2.9 mm alignment holes take the case's pegs.
+  photos on 2026-11-16 (two photos agree within 0.2 mm). Two 2.5 mm alignment holes take the case's pegs.
 - No tracks or vias on the outer layers within 2.6 mm of a hole centre, so a screw head only touches
   solder mask over ground.
 - Bare ground pads match the mainboard's: left of J30 and in the top-left corner on the component side
@@ -918,5 +975,5 @@ so DSI through the J44 extender is the least certain part.
 - [ ] J4/J46 pinout (power, USB, J1) and J100 pinout (buttons, LEDs, privacy switch, microphones).
 - [ ] Microphones (analog, per TECHO5): decide whether to also remove MK1 and MK2 from the top board.
 - [ ] Internal cavity dimensions, for the P4-NANO fit and the drop-in board outline.
-- [ ] Speaker (8 Ω, PicoBlade 2-pin): does the P4 board have an amplifier to drive it, or add one?
+- [ ] Speaker (8 Ω, Pico-SPOX 2-pin): does the P4 board have an amplifier to drive it, or add one?
 - [ ] Will the P4-NANO (with its module, connectors and any headers) fit within the space the 8.8 mm tall mainboard occupied?

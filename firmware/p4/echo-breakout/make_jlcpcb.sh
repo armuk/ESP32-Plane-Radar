@@ -2,7 +2,7 @@
 # Build the JLCPCB order files from echo-breakout.kicad_pcb:
 #   jlcpcb/echo-breakout-gerbers.zip  (Gerbers + drill)
 #   jlcpcb/bom.csv                    (written by gen_board.py)
-#   jlcpcb/cpl.csv                    (placement, SMD parts on the top side)
+#   jlcpcb/cpl.csv                    (written by finish_board.py)
 set -e
 cd "$(dirname "$0")"
 PCB=echo-breakout.kicad_pcb
@@ -18,10 +18,5 @@ kicad-cli pcb export drill -o "$G/" --format excellon --excellon-units mm \
 rm -f "$OUT/echo-breakout-gerbers.zip"
 (cd "$G" && zip -q ../echo-breakout-gerbers.zip ./*)
 
-kicad-cli pcb export pos -o "$OUT/pos-raw.csv" --format csv --units mm --side front --smd-only "$PCB"
-# KiCad: Ref,Val,Package,PosX,PosY,Rot,Side  ->  JLCPCB: Designator,Mid X,Mid Y,Layer,Rotation
-awk -F, 'NR==1 {print "Designator,Mid X,Mid Y,Layer,Rotation"; next}
-         {gsub(/"/,""); if ($1 ~ /^JP/) next; print $1","$4"mm,"$5"mm,Top,"$6}' \
-  "$OUT/pos-raw.csv" > "$OUT/cpl.csv"
-rm "$OUT/pos-raw.csv"
+# cpl.csv is written by finish_board.py (it needs the body centre of each through-hole part).
 echo "done: $OUT/echo-breakout-gerbers.zip, $OUT/bom.csv, $OUT/cpl.csv"

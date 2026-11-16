@@ -5,7 +5,7 @@ mm = pcbnew.FromMM
 
 
 def apply_rules(board, power_clearance=0.2):
-    """JLCPCB 2-layer limits with margin. Stored in the .kicad_pro, so re-applied before every save."""
+    """JLCPCB 4-layer limits with margin. Stored in the .kicad_pro, so re-applied before every save."""
     ds = board.GetDesignSettings()
     nc = ds.m_NetSettings.GetDefaultNetclass()
     nc.SetClearance(mm(0.15))
