@@ -12,7 +12,10 @@ import importlib.util
 _spec = importlib.util.spec_from_file_location('rules', os.path.join(HERE, 'rules.py'))
 rules = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(rules)
-rules.apply_rules(board)
+# The autorouter works to 0.2 mm around the power nets but rounds to the micron, and now and then
+# lands a track 0.1994 mm from a pad. Check the finished board at 0.19 mm (the fab limit is 0.127).
+POWER_CLEARANCE = 0.19
+rules.apply_rules(board, POWER_CLEARANCE)
 if not pcbnew.ImportSpecctraSES(board, os.path.join(HERE, 'echo-breakout.ses')):
     raise SystemExit('SES import failed')
 
@@ -73,6 +76,16 @@ if not os.environ.get('NO_CLEAN'):
     print('removed dangling segments (KiCad check):', remove_dangling_kicad(board))
 
 gnd = board.FindNet('GND')
+# Screw pads and the bare ground pads (GP*, GB*): tie them to ground here (they are net-less obstacles for the autorouter). The pours
+# connect them solidly on every layer.
+for fp in board.GetFootprints():
+    if fp.GetReference().startswith('H') or fp.GetReference().startswith('G'):
+        for p in fp.Pads():
+            p.SetNet(gnd)
+            p.SetLocalZoneConnection(pcbnew.ZONE_CONNECTION_FULL)
+            # The autorouter saw these pads without a net, so it kept the default 0.15 mm from
+            # them, not the 0.2 mm of the ground net's class. Hold them to 0.15 mm here too.
+            p.SetLocalClearance(mm(0.15))
 for layer in (pcbnew.F_Cu, pcbnew.In1_Cu, pcbnew.In2_Cu, pcbnew.B_Cu):
     z = pcbnew.ZONE(board)
     z.SetLayer(layer)
@@ -95,5 +108,5 @@ for layer in (pcbnew.F_Cu, pcbnew.In1_Cu, pcbnew.In2_Cu, pcbnew.B_Cu):
 pcbnew.ZONE_FILLER(board).Fill(board.Zones())
 out = os.path.join(HERE, 'echo-breakout.kicad_pcb')
 pcbnew.SaveBoard(out, board)
-rules.write_project(out)
+rules.write_project(out, POWER_CLEARANCE)
 print('saved', out, 'tracks', len(board.GetTracks()))

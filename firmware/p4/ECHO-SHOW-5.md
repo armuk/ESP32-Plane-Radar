@@ -521,7 +521,7 @@ Expected centre-to-centre spans:
 | Socket | Spec |
 |---|---|
 | Display | 33 pins, 0.3 mm pitch, for 0.2 mm thick FPC, **bottom contact** (or dual contact) |
-| Touch | 8 pins, 0.5 mm pitch, for 0.3 mm thick FPC, **bottom contact** (or dual contact) |
+| Touch | 8 pins, 0.5 mm pitch, for 0.3 mm thick FPC, **bottom contact** (or dual contact), **taking only 1.5 mm of ribbon** (Hirose FH34SRJ) |
 | IO board (drop-in board only) | 31 pins, 0.3 mm pitch, for 0.2 mm thick FPC, **bottom contact** (or dual contact) |
 | Top board (drop-in board only) | 23 pins, 0.3 mm pitch, for 0.2 mm thick FPC, **bottom contact** (or dual contact) |
 
@@ -577,24 +577,83 @@ display ribbon.
 | **J46** IO board, 31 pins | 42.0, 6.5 | 11.5 × 4 | Opening faces the **top** edge. **Pin 1 at the right (+x) end**, 31 at the left (silkscreen) |
 | **J45** camera, 25 pins | about 6, 10 | | Opening faces left. Pin 1 at the bottom, 25 at the top (silkscreen) |
 | **J2** speaker (PicoBlade) | 82.4, 2.7 | about 5 × 6 | At the top edge, beside C9211 |
-| Screw S1 | 30.4, 6.3 | | Between J100 and J46 |
-| Screw S2 | 65.8, 2.5 | | Top edge |
-| Screw S3 | 2.6, 29.1 | | Left edge, above J44 |
-| Screw S4 | 22.7, 58.1 | | Bottom edge, right of J30 |
-| Screw S5 | 71.0, 56.8 | | Bottom edge |
-| Screw S6 | 104.8, 31.4 | | Right edge |
+| Screw S1 | 30.35, 6.45 | | Between J100 and J46 |
+| Screw S2 | 65.8, 2.85 | | Top edge |
+| Screw S3 | 2.8, 29.9 | | Left edge, above J44 |
+| Screw S4 | 23.25, 57.85 | | Bottom edge, right of J30 |
+| Screw S5 | 70.85, 57.05 | | Bottom edge |
+| Screw S6 | 105.1, 31.35 | | Right edge |
 | Plated holes (no screw) | 3.0, 5.2 and 2.9, 56.9 | | Top-left and bottom-left corners; probably ground points |
+| Touch ground pad | x 2.3–11.6, y 46.0–58.7 | about 9.3 × 12.7 | Bare gold area left of J30, via-stitched to ground, running into the stitched strips at the board edges. The ground pad on the back of the touch ribbon's GT911 rests on it |
+| Alignment hole A1 | 3.1, 16.8 | about 2.5 across | Plain hole below J45, for a locating peg in the case |
+| Alignment hole A2 | 93.4, 17.05 | about 2.5 across | Plain hole beside the part-number print, for a locating peg |
 
-**Hand measurements (2026-11-15):**
+**Screw holes re-measured (2026-11-16):**
+- **Outline by caliper:** 107.96 × 59.91 mm, so 108 × 60 mm stands.
+- **Method:** two more straight-down photos of the bare board with a steel rule against one edge. Each
+  was perspective-corrected to the calipered outline, and every hole centre read off at full resolution
+  (about 23 pixels per mm). The screw rows above now hold the average of the two.
+- **Agreement:** the two photos differ by at most 0.17 mm on any hole.
+- **Each screw hole** is about 2.2 mm across in a 5 mm exposed ground pad. The two alignment holes are
+  plain, about 2.5 mm, with no pad.
 
-| Hole | Measured | Centre this gives (mm) | Board hole | Verdict |
+| Hole | Photo A | Photo B | Earlier estimate | Moved by |
 |---|---|---|---|---|
-| S6 (right end) | 3 mm from the right edge, 104 mm from the left; 31 mm from the top, 28 mm from the bottom | x 104–105, y 31–32 | 104.8, 31.4 | Up to 0.8 mm off in x and 0.6 mm in y, against 0.3 mm of slack in a 2.6 mm hole: **not settled**. Caliper it |
+| S1 | 30.37, 6.56 | 30.34, 6.39 | 30.4, 6.3 | −0.05, +0.17 |
+| S2 | 65.81, 2.87 | 65.74, 2.79 | 65.8, 2.5 | −0.02, +0.33 |
+| S3 | 2.84, 29.96 | 2.79, 29.84 | 2.6, 29.1 | +0.21, +0.80 |
+| S4 | 23.22, 57.84 | 23.26, 57.84 | 22.7, 58.1 | +0.54, −0.26 |
+| S5 | 70.80, 57.04 | 70.91, 57.11 | 71.0, 56.8 | −0.15, +0.27 |
+| S6 | 105.10, 31.35 | 105.05, 31.31 | 104.8, 31.4 | +0.28, −0.07 |
+| A1 | 3.14, 16.91 | 3.02, 16.73 | | |
+| A2 | 93.39, 17.10 | 93.38, 16.97 | | |
 
-The pairs add up to 107 and 59 mm rather than 108 and 60. So the readings are either rounded to the
-nearest millimetre, or taken to the hole's near edge rather than its centre. A caliper reading to 0.1 mm
-(near side and far side of the hole from each edge, averaged) would settle it. The other five holes are
-still to measure.
+S6 agrees with the hand reading of 2026-11-15 (3 mm from the right edge, 31 mm from the top).
+
+**Sockets in the same photos (rougher: the legs are harder to pick than a hole):**
+- **J44:** rear leg row at 7.9–8.0, 39.1; the breakout has 7.92, 39.0.
+- **J100 and J46:** rear leg rows 8.2–8.3 mm from the cable edge, matching the breakout. Along the edge
+  the readings were 0.4–0.6 mm towards the display side of the breakout's positions: unconfirmed.
+- **J30:** the solder legs are 18.2–18.7 mm from the display edge and the body is only about 3.4 mm
+  deep, with its mouth at about 15 mm. The breakout's FH12 has its mouth at the same place but is
+  5.6 mm deep, legs at 21.7 mm. So the touch ribbon must slide roughly 1.5–2 mm further in to reach the
+  FH12's contacts.
+- **Ribbon insertion (2026-11-16):** the tip goes **1.5 mm** into the old socket, so it reaches about
+  16.5 mm in from the display edge.
+- **J30 identified (2026-11-16): Hirose FH34SRJ-8S-0.5SH, or a copy of it.** Measured on the board: the
+  socket is 6 mm wide and about 4 mm deep with the lock closed; the ribbon's tongue is 3 mm long, of
+  which 1.5 mm goes in, up to a white line printed on it. Hirose's FH34SRJ-8S is 6.0 mm wide, 3.8 mm
+  deep with leads, 1.0 mm high, back-flip, for 0.3 mm ribbon 4.5 mm wide with 1.5 ± 0.3 mm of bare
+  contact and a 2.5 ± 0.3 mm stiffener. Every figure matches. The FH12 can't take this ribbon (it
+  needs 4.4 mm of tongue), so the breakout's J30 is now an FH34SRJ-8S-0.5SH(50) (LCSC C88372) at the
+  mainboard's position: front face 15.1 mm from the display edge, lands at 17.8–18.6 mm.
+
+**Grounding (2026-11-16, photos of the board's back and of the display frame):**
+- **The back of the mainboard has nine bare gold ground pads**, each about 8–10 mm square. The display
+  frame behind it carries seven conductive fabric-over-foam gaskets that press on seven of them.
+- **The GT911 sits under the board**, between the frame and the board's back, at the J30 corner. Its
+  ribbon tail wraps round the display edge and into J30 from the left: 15 mm to the socket mouth plus
+  1.5 mm inside it accounts for the 17.5 mm tail. The pad on the back at that corner (B1) has no
+  gasket: the GT911's own ground pad rests on it.
+- **The button/mic board grounds through a strip of metal-mesh tape** stuck to the bare area above J45
+  on the component side. That area runs down the display edge as a sliver to a second bare patch by
+  alignment hole A1, above the data-matrix label.
+
+| Back pad | x (mm) | y (mm) | Gasket on the frame |
+|---|---|---|---|
+| B1 | 1.2–10.0 | 51.8–58.9 | No: the GT911's ground pad rests here |
+| B2 | 27.8–37.9 | 51.7–59.5 | Yes |
+| B3 | 99.8–107.1 | 50.1–59.5 | Yes |
+| B4 | 99.8–107.1 | 34.9–44.7 | Yes |
+| B5 | 66.7–74.8 | 24.5–34.5 | Yes |
+| B6 | 1.2–10.0 | 18.5–26.6 | No |
+| B7 | 6.5–16.5 | 1.8–9.7 | Yes |
+| B8 | 74.0–84.2 | 1.6–9.7 | Yes |
+| B9 | 90.4–98.6 | 2.0–12.0 | Yes |
+
+Positions are in the board's own top-view frame (x from the display edge, y from the cable edge), read
+from a perspective-corrected ruler photo of the back, to about ±0.3 mm. Tape pad on the component side:
+x 0.3–8.5, y 0.3–4.6, a sliver at x 0.3–1.7 down to y 14.2, then x 0.3–8.0, y 14.2–18.5 around A1.
 
 What this means for the breakout board:
 - **J44 and J30 are about 18 mm apart (centre to centre: 11 mm across, 15 mm down), both opening to the left edge.** The
@@ -780,7 +839,7 @@ anything else: J44 17.5 mm, J30 about the same, J100 23 mm, J46 44 mm. Socket po
 | J44 | Hirose FH26W-33S-0.3SHW (C424654) | 2 × 17 header (last pin GND) |
 | J46/J4 | Hirose FH26W-31S-0.3SHW (C2973806) | 2 × 16 (last pin GND) |
 | J100 | Hirose FH26W-23S-0.3SHW (C3168948) | 2 × 12 (last pin GND) |
-| J30 | Hirose FH12-8S-0.5SH (C597995) | 1 × 8 |
+| J30 | Hirose FH34SRJ-8S-0.5SH (C88372) | 1 × 8 |
 | Speaker (J2) | Molex PicoBlade 53261-0271 (C177225) | 1 × 2 |
 
 Header pin numbers are the **Echo's** pin numbers (mainboard silkscreen pin 1) on every header,
@@ -797,14 +856,15 @@ It also carries:
   comes from a bench supply)
 
 Notes:
-- The screw holes are 2.6 mm, giving an M2 screw 0.3 mm of slack each way on the photo-measured
-  positions. Five of the six are still photo-derived, and S6's hand reading is too coarse to settle it.
-  Caliper-check them first (method in the breakout README).
+- The screw holes are 2.6 mm plated holes in grounded copper pads, at positions re-measured from ruler
+  photos on 2026-11-16 (two photos agree within 0.2 mm). Two 2.9 mm alignment holes take the case's pegs.
 - No tracks or vias on the outer layers within 2.6 mm of a hole centre, so a screw head only touches
   solder mask over ground.
-- Screw S4 clears J30's pins by only about 0.5 mm; leave it out if the head touches.
+- Bare ground pads match the mainboard's: left of J30 and in the top-left corner on the component side
+  (touch ribbon, mic board tape), and nine on the back for the display frame's gaskets and the GT911.
+- J30 is the same socket type as the original (FH34SRJ-8S-0.5SH) at the original's position.
 - While the touch supply is off, firmware must keep SDA, SCL, INT and RST low or high-impedance.
-- The back faces the screen's metal shield: trim the pins and tape it.
+- The back faces the display frame: trim the pins and tape over them, but leave the bare pads uncovered.
 
 The touch bus reaches J30 through jumper wires (a patch field). J30 isn't mapped yet, so a wrong guess
 costs a wire, not a board. The board is for unpowered mapping and for running the touch ribbon, buttons
@@ -846,7 +906,7 @@ so DSI through the J44 extender is the least certain part.
 ## Open questions
 
 - [x] J44 connector pitch: 0.3 mm (33 pins). Mating socket chosen: Hirose FH26W-33S-0.3SHW (see the breakout board).
-- [x] J30 pitch: 0.5 mm (8 pins). Mating socket chosen: Hirose FH12-8S-0.5SH.
+- [x] J30 pitch: 0.5 mm (8 pins). Mating socket: Hirose FH34SRJ-8S-0.5SH (matches the original; an FH12 is too deep for the ribbon).
 - [ ] Order the breakout board ([echo-breakout/](echo-breakout/README.md)), and check the socket rotations in JLCPCB's preview.
 - [ ] J44 pinout (table above).
 - [ ] J30 pinout and the touch I/O voltage.

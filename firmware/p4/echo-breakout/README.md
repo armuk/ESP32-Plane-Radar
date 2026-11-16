@@ -28,10 +28,10 @@ its ribbon-facing edge at the original's position. To work with the board outsid
 | Socket | Part (LCSC) | Position (mm from the top-left corner) | Broken out to |
 |---|---|---|---|
 | **J44** display | Hirose FH26W-33S-0.3SHW(60) (C424654) | Ribbon edge x = 4.2, centred y = 39.0, opening left | P1, 2 × 17 |
-| **J30** touch | Hirose FH12-8S-0.5SH(55) (C597995) | Ribbon edge x = 14.9, centred y = 53.8, opening left | P4, 1 × 8 |
+| **J30** touch | Hirose FH34SRJ-8S-0.5SH(50) (C88372) | Front face x = 15.1, centred y = 53.8, opening left | P4, 1 × 8 |
 | **J100** top board | Hirose FH26W-23S-0.3SHW(60) (C3168948) | Ribbon edge y = 4.4, centred x = 22.4, opening up | P3, 2 × 12 |
 | **J46** IO board | Hirose FH26W-31S-0.3SHW(60) (C2973806) | Ribbon edge y = 4.5, centred x = 42.0, opening up | P2, 2 × 16 |
-| **J2** speaker | Molex PicoBlade 53261-0271 (C177225) | Top edge at x = 82.4, as on the mainboard | P8, 1 × 2 |
+| **J2** speaker | Molex PicoBlade 53261-0271 (C177225) | Top edge at x = 82.4, as on the mainboard | P8, 1 × 2 (top-right corner) |
 
 How to read the headers:
 - **Header pin n = Echo pin n** on every header, using the mainboard's own silkscreen pin 1:
@@ -40,15 +40,36 @@ How to read the headers:
 - The 2-row headers (J44, J100, J46) end with an extra GND pin.
 
 **Mounting:**
-- Six plain 2.6 mm holes at the original screw positions, assumed M2. They're larger than an M2
-  clearance hole (2.2 mm) to absorb the photo error: an M2 screw can sit up to 0.3 mm off-centre. An M2
-  pan head (3.8 mm) still covers them.
+- Six 2.6 mm plated holes at the original screw positions, assumed M2. The positions were measured
+  from ruler photos of the mainboard (see "Measuring the screw holes" below). An M2 screw can sit up to
+  0.3 mm off-centre in a 2.6 mm hole, and an M2 pan head (3.8 mm) still covers it.
+- **Each hole sits in an exposed, grounded copper pad** on both faces, as on the mainboard: 4.8 mm
+  across (3.6 mm at S4, where the board edge is close). The screw head bears on the pad, not on
+  solder mask, and the screw ties the board's ground to the case post.
 - No tracks or vias within 2.6 mm of any hole centre on the outer layers (rule areas `SCREW_H1`–`H6`).
-  The head reaches 1.9 mm out, or 2.2 mm with the screw fully off-centre, so it only ever sits on solder
-  mask over ground pour.
-- **Measure before ordering** (see below): the positions come from photos.
-- Screw S4 (bottom, beside J30) is only 1.9 mm from the edge. Its head clears J30's pins by about
-  0.5 mm, so leave that screw out if it touches.
+  The head reaches 1.9 mm out, or 2.2 mm with the screw fully off-centre.
+- Screw S4 (bottom edge) is only 2.1 mm from the edge.
+- **J30 is a Hirose FH34SRJ-8S-0.5SH, at the mainboard socket's own position.** The mainboard's
+  socket matches that part on every measured point: 6.0 mm wide, 3.8 mm deep, back-flip lock on the leg
+  side, 0.3 mm ribbon, and a ribbon with 1.5 mm of bare contact and its insertion line at 1.5 mm.
+  - An FH12 (used in earlier versions) doesn't work: it needs the ribbon 4.4 mm deep, and the Echo's
+    touch ribbon has a 3 mm tongue of which 1.5 mm goes in.
+  - The footprint is built in `gen_board.py` from Hirose's recommended pattern (FH34 catalogue, page 8,
+    in `../parts-documentation/`): eight 0.3 × 0.8 mm lands and two 0.4 × 0.8 mm fitting lands.
+  - **It's a back-flip socket: the lock lifts on the leg side, away from the ribbon.** Push the ribbon
+    in to its white line, then press the lock down.
+- **Bare ground pads.** The mainboard grounds to its surroundings through bare gold pads, and the
+  breakout has the same ones. Keep them all bare: no tape, no flux residue.
+  - **GP1, top, left of J30** (x 1.0–11.0, y 46.0–59.0): the touch ribbon lies across it. Four plated
+    holes tie it to the ground pours on every layer.
+  - **GP2, top-left corner** (x 0.6–9.0, y 0.6–4.8, with a sliver down the display edge to a second
+    patch at y 12.4–14.0): the metal-mesh tape from the button/mic board sticks here.
+  - **GB1–GB9, back:** nine pads where the display frame's conductive fabric gaskets press (GB2–GB5,
+    GB7–GB9), plus GB1 under the J30 corner, where the GT911's ground pad rests, and GB6 on the
+    display edge. No through-hole part sits inside any of them. Positions are in `BACK_PADS` in
+    `gen_board.py`.
+- **Two 2.9 mm alignment holes** for the case's locating pegs: A1 at 3.1, 16.8 (by the original's J45)
+  and A2 at 93.4, 17.05 (by the original's part-number print). The mainboard's are about 2.5 mm.
 
 **ESP32 section** (for the touch test, and for buttons, LEDs and ADC readings later):
 
@@ -84,29 +105,27 @@ P5 to P4 with jumper wires. A wrong guess costs a wire, not a board.
 
 ## Measuring the screw holes
 
-Do this on the old mainboard before ordering, and write the results into "Positions from the photos" in
-ECHO-SHOW-5.md.
+The hole positions come from two straight-down photos of the bare mainboard with a steel rule beside it
+(2026-11-16). Each photo was perspective-corrected to the calipered outline (107.96 × 59.91 mm) and the
+hole centres read off at full resolution. The two photos agree within 0.2 mm on every hole; the table is
+in "Positions from the photos" in ECHO-SHOW-5.md.
+
+To check a hole directly with calipers:
 
 1. Lay the mainboard component side up, with the display edge (J44) on the left and the cable edge (J46,
-   J100) at the top, as in the photos.
-2. For each screw hole, use the caliper's depth rod or outside jaws to measure:
-   - the left edge to the near side of the hole, and the left edge to the far side; the average is the
-     centre x;
-   - the top edge to the near and far sides in the same way, for the centre y.
-3. Measure the hole's diameter with the inside jaws.
-4. Measure the board's width and height too. If the board isn't exactly 108 × 60 mm, scale the
-   positions to match.
-
-If every hole is within 0.3 mm of the board's position (the slack a 2.6 mm hole gives an M2 screw), the
-board is fine as it is. If any is further out, edit `SCREWS` in `gen_board.py` and rebuild. Only S6 has
-been hand-measured so far, and not yet precisely enough to settle it (see ECHO-SHOW-5.md).
+   J100) at the top.
+2. Measure from the left edge to the near side of the hole and to its far side; the average is the
+   centre x. Do the same from the top edge for the centre y.
+3. If a hole is more than 0.3 mm from the board's position, edit `SCREWS` in `gen_board.py` and rebuild.
 
 ## Using it
 
 1. **Fitting:**
    - Take the old mainboard out.
-   - Trim the through-hole pins flush on the back and cover the back with Kapton tape. That side faces
-     the screen's metal back, as the mainboard's did.
+   - Trim the through-hole pins flush on the back and cover **the pins** with Kapton tape. That side
+     faces the display frame, as the mainboard's did. Leave the nine bare pads on the back uncovered:
+     the frame's conductive gaskets press on them.
+   - Stick the button/mic board's mesh tape to the bare pad in the top-left corner (GP2).
    - Screw the breakout in place and plug the ribbons in exactly as they went into the mainboard.
 2. **Check pin 1 before trusting the labels.** Beep a pin you can identify (for example a wide ground
    trace) against the old mainboard.
@@ -144,6 +163,8 @@ Steps:
 3. **Check every part's rotation in JLCPCB's placement preview**, above all the four ribbon sockets:
    - Each socket's pin 1 mark must match the board.
    - The opening must face the board edge: left for J44 and J30, up for J100 and J46.
+   - **J30's footprint is this project's own**, so JLCPCB's rotation for it is the least certain:
+     its eight legs must be on the right, away from the display edge.
 4. **J100 (C3168948) was out of stock at LCSC on 2026-11-15.** Either:
    - pre-order it through JLC's global sourcing, or
    - mark J100 "do not place" and fit it yourself. It's a 0.3 mm part, but each of its two rows is 0.6 mm
@@ -153,8 +174,7 @@ Steps:
    - two 1 × 8 female sockets
    - two GND test loops
 
-DRC (KiCad 10): 0 unconnected items. One accepted exception: screw hole H4 sits inside J30's courtyard
-(see Mounting above). The rules are 0.15 mm tracks and clearance, 0.4 mm power tracks and 0.3/0.6 mm
+DRC (KiCad 10): 0 unconnected items. No violations. The rules are 0.15 mm tracks and clearance, 0.4 mm power tracks and 0.3/0.6 mm
 vias, and silkscreen strokes of at least 0.15 mm, all within JLCPCB's standard limits.
 
 ## Rebuilding

@@ -179,8 +179,8 @@ FH26W_LCSC = {33: 'C424654', 31: 'C2973806', 23: 'C3168948'}
 SOCKETS = [
     # ref, pins, rot, ribbon side, face coordinate, centre, Echo pin 1 end, header, header pads, header centre, title
     ('J44', 33, 180, 'left', 4.2, (None, 39.0), 'top', 'P1', 34, (36.0, 28.5), 'J44 DISPLAY 33P'),
-    ('J100', 23, 90, 'top', 4.4, (22.4, None), 'right', 'P3', 24, (20.0, 17.5), 'J100 TOP BOARD 23P'),
-    ('J46', 31, 90, 'top', 4.5, (42.0, None), 'right', 'P2', 32, (58.0, 17.5), 'J46 IO BOARD 31P'),
+    ('J100', 23, 90, 'top', 4.4, (22.4, None), 'right', 'P3', 24, (22.0, 17.5), 'J100 TOP BOARD 23P'),
+    ('J46', 31, 90, 'top', 4.5, (42.0, None), 'right', 'P2', 32, (60.0, 17.5), 'J46 IO BOARD 31P'),
 ]
 for ref, n, rot, side, face, (cx, cy), p1end, href, hn, (hx, hy), title in SOCKETS:
     sk = add(ref, 'Connector_FFC-FPC', FH26.format(n=n), rot, value='FH26W-%dS-0.3SHW(60)' % n,
@@ -205,13 +205,56 @@ for ref, n, rot, side, face, (cx, cy), p1end, href, hn, (hx, hy), title in SOCKE
     label_header(h, lab)
     text(title + ' (Echo pin numbers)', hx, hy + 5.4, 0.9, bold=True)
 
-# J30 touch: Hirose FH12 takes the ribbon from +y; rot -90 -> from the left. The mainboard silkscreen
-# marks pin 1 at the top end (nearest J44) and 8 at the bottom (nearest screw S4), so the header
-# carries Echo pin numbers like the others.
-j30 = add('J30', 'Connector_FFC-FPC', 'Hirose_FH12-8S-0.5SH_1x08-1MP_P0.50mm_Horizontal', -90,
-          value='FH12-8S-0.5SH(55)', lcsc='C597995')
+# J30 touch: Hirose FH34SRJ-8S-0.5SH(50). The mainboard's own socket matches it on every count: 6.0 mm
+# wide, 3.8 mm deep, back-flip lock on the leg side, 0.3 mm ribbon, and the ribbon's 1.5 mm of bare
+# contact with its insertion line at 1.5 mm (Hirose: "uncovered area 1.5 +-0.3"). The FH12 used
+# before needs the ribbon 4.4 mm deep, and the Echo's has only a 3 mm tongue.
+def make_fh34srj_8s():
+    """Footprint from Hirose's recommended PCB mounting pattern (FH34 catalogue, p.8). Leads at -y,
+    ribbon enters from +y, contact No.1 at +x. Origin at the body centre (3.8 mm deep)."""
+    fp = pcbnew.FOOTPRINT(board)
+    fp.SetFPID(pcbnew.LIB_ID('echo-breakout', 'Hirose_FH34SRJ-8S-0.5SH_1x08-1MP_P0.50mm_Horizontal'))
+    fp.SetAttributes(pcbnew.FP_SMD)
+    def smd(num, x, y, w, h):
+        p = pcbnew.PAD(fp)
+        p.SetAttribute(pcbnew.PAD_ATTRIB_SMD)
+        p.SetShape(pcbnew.PAD_SHAPE_RECT)
+        p.SetSize(V(w, h))
+        p.SetLayerSet(pcbnew.PAD.SMDMask())
+        p.SetNumber(num)
+        fp.Add(p)
+        p.SetPosition(V(x, y))
+    for k in range(1, 9):
+        smd(str(k), 1.75 - 0.5 * (k - 1), -1.15, 0.3, 0.8)     # signal lands: 0.3 x 0.8, 0.5 pitch
+    for x in (-2.75, 2.75):
+        smd('MP', x, 1.35, 0.4, 0.8)                           # metal fittings: E 5.1 / F 5.9
+    def box(layer, x0, y0, x1, y1, w):
+        g = pcbnew.PCB_SHAPE(fp)
+        g.SetShape(pcbnew.SHAPE_T_RECT)
+        g.SetStart(V(x0, y0))
+        g.SetEnd(V(x1, y1))
+        g.SetLayer(layer)
+        g.SetWidth(mm(w))
+        fp.Add(g)
+    box(pcbnew.F_Fab, -3.0, -1.9, 3.0, 1.9, 0.1)               # body: 6.0 x 3.8 with leads
+    box(pcbnew.F_CrtYd, -3.25, -2.15, 3.25, 2.15, 0.05)
+    return fp
+
+
+j30 = make_fh34srj_8s()
+j30.SetReference('J30')
+j30.SetValue('FH34SRJ-8S-0.5SH(50)')
+board.Add(j30)
+j30.SetOrientationDegrees(-90)          # ribbon from +y -> from the left
+j30.Reference().SetVisible(False)
+j30.Value().SetVisible(False)
+BOM['J30'] = ('FH34SRJ-8S-0.5SH(50)', 'Hirose_FH34SRJ-8S-0.5SH_1x08-1MP_P0.50mm_Horizontal', 'C88372')
 centre_on(j30, None, 53.8)
-entry_face(j30, 'left', 14.9)
+# Front face at 15.1 mm from the display edge, where the mainboard's is: its legs measure 18.2-18.7 mm
+# in the ruler photos and this puts the lands at 17.75-18.55. The courtyard edge is 0.25 mm further out.
+entry_face(j30, 'left', 14.85)
+# The mainboard silkscreen marks pin 1 at the top end (nearest J44) and 8 at the bottom (nearest screw
+# S4), so the header carries Echo pin numbers like the others.
 j30map = echo_numbering(j30, 8, 'top')
 for pad, e in j30map.items():
     setnet(j30, pad, 'J30_%d' % e)
@@ -333,25 +376,32 @@ entry_face(j2, 'top', 0.5)
 setnet(j2, 1, 'SPK_1')
 setnet(j2, 2, 'SPK_2')
 p8 = add('P8', 'Connector_PinHeader_2.54mm', 'PinHeader_1x02_P2.54mm_Vertical', 90)
-centre_pads_at(p8, 92.0, 4.0)
+centre_pads_at(p8, 103.0, 4.0)
 setnet(p8, 1, 'SPK_1')
 setnet(p8, 2, 'SPK_2')
-text('SPEAKER', 92.0, 7.0, 0.8, bold=True)
+text('SPEAKER', 97.0, 4.0, 0.8, bold=True)
 
 # ---------------------------------------------------------------- mounting (the original screw positions) and ground
-HOLE = 2.6
+HOLE = 2.6      # finished hole; an M2 screw has 0.3 mm of slack in it
+RING = 4.8      # grounded pad around each screw, as on the mainboard (5 mm there)
+RING_AT = {4: 3.6}   # S4: the board edge is 2.1 mm away
 KEEPOUT = 2.6   # radius of the track/via keepout around each screw
-# H4 (S4): J30 pin 8's pad comes within 2.43 mm of the hole centre, so 2.6 mm would trap it. 2.3 mm
-# still clears the head's furthest reach (1.9 mm + 0.3 mm off-centre).
-KEEPOUT_AT = {4: 2.3}
-SCREWS = [(30.4, 6.3), (65.8, 2.5), (2.6, 29.1), (22.7, 58.1), (71.0, 56.8), (104.8, 31.4)]
+KEEPOUT_AT = {}
+# Hole centres measured from two perspective-corrected ruler photos of the mainboard (2026-11-16);
+# the two agree within 0.2 mm on every hole. See "Positions from the photos" in ECHO-SHOW-5.md.
+SCREWS = [(30.35, 6.45), (65.8, 2.85), (2.8, 29.9), (23.25, 57.85), (70.85, 57.05), (105.1, 31.35)]
 for i, (x, y) in enumerate(SCREWS, 1):
-    # Plain holes: S4 is 1.9 mm from the edge and 2.4 mm from J30 pin 8, so no copper ring.
-    # Drilled 2.6 mm (not 2.2) for slack: the positions come from photos (+-0.3-0.8 mm).
+    # Plated hole in an exposed copper pad on both faces, like the mainboard's screw pads. The pad
+    # has no net here, so the autorouter treats it as an obstacle; finish_board.py ties it to GND
+    # and the ground pours on all four layers connect it.
     mh = add('H%d' % i, 'MountingHole', 'MountingHole_2.2mm_M2', 0)
+    ring = RING_AT.get(i, RING)
     for hp in mh.Pads():
+        hp.SetAttribute(pcbnew.PAD_ATTRIB_PTH)
+        hp.SetLayerSet(pcbnew.PAD.PTHMask())
+        hp.SetNumber('1')
         hp.SetDrillSize(V(HOLE, HOLE))
-        hp.SetSize(V(HOLE, HOLE))
+        hp.SetSize(V(ring, ring))
     mh.SetPosition(V(x, y))
     # Keep tracks and vias out from under the screw head on both outer layers: an M2 pan head is
     # 3.8 mm across and the 2.6 mm hole lets it sit 0.3 mm off-centre, so it reaches 2.2 mm out.
@@ -374,6 +424,128 @@ for i, (x, y) in enumerate(SCREWS, 1):
         rk = KEEPOUT_AT.get(i, KEEPOUT)
         o.Append(mm(x + rk * math.cos(a)), mm(y + rk * math.sin(a)))
     board.Add(ko)
+# Alignment holes: the case has locating pegs here (by J45, and by the part-number print). Plain
+# holes, 2.9 mm for the mainboard's 2.5 mm, with tracks kept 2 mm clear on the outer layers.
+ALIGN_HOLE = 2.9
+ALIGN = [(3.1, 16.8), (93.4, 17.05)]
+for i, (x, y) in enumerate(ALIGN, 1):
+    ah = add('A%d' % i, 'MountingHole', 'MountingHole_2.2mm_M2', 0)
+    for hp in ah.Pads():
+        hp.SetDrillSize(V(ALIGN_HOLE, ALIGN_HOLE))
+        hp.SetSize(V(ALIGN_HOLE, ALIGN_HOLE))
+    ah.SetPosition(V(x, y))
+    ko = pcbnew.ZONE(board)
+    ko.SetIsRuleArea(True)
+    ko.SetDoNotAllowTracks(True)
+    ko.SetDoNotAllowVias(True)
+    ko.SetDoNotAllowPads(False)
+    ko.SetDoNotAllowZoneFills(False)
+    ko.SetDoNotAllowFootprints(False)
+    ls = pcbnew.LSET()
+    ls.AddLayer(pcbnew.F_Cu)
+    ls.AddLayer(pcbnew.B_Cu)
+    ko.SetLayerSet(ls)
+    ko.SetZoneName('ALIGN_A%d' % i)
+    o = ko.Outline()
+    o.NewOutline()
+    for k in range(32):
+        a = 2 * math.pi * k / 32
+        o.Append(mm(x + 2.0 * math.cos(a)), mm(y + 2.0 * math.sin(a)))
+    board.Add(ko)
+# Touch ground pad: the mainboard has a bare gold area here, left of J30, that the ground pad on the
+# back of the touch ribbon's GT911 rests on (measured from the ruler photos: x 2.3-11.6, y 46.0-58.7,
+# plus the via-stitched strips out to the board edges). One exposed pad with four plated holes that
+# tie it to the ground pours on every layer. No net here (an obstacle for the autorouter);
+# finish_board.py ties it to GND.
+GPAD = (1.0, 46.0, 11.5, 59.0)   # x0, y0, x1, y1
+gp = pcbnew.FOOTPRINT(board)
+gp.SetReference('GP1')
+gp.SetValue('Touch ground pad')
+gp.SetFPID(pcbnew.LIB_ID('echo-breakout', 'TouchGroundPad'))   # the Specctra files need a footprint name
+gp.SetAttributes(pcbnew.FP_EXCLUDE_FROM_BOM | pcbnew.FP_EXCLUDE_FROM_POS_FILES | pcbnew.FP_BOARD_ONLY)
+board.Add(gp)
+_gx, _gy = (GPAD[0] + GPAD[2]) / 2, (GPAD[1] + GPAD[3]) / 2
+gp.SetPosition(V(_gx, _gy))
+gp.Reference().SetVisible(False)
+gp.Value().SetVisible(False)
+_p = pcbnew.PAD(gp)
+_p.SetAttribute(pcbnew.PAD_ATTRIB_SMD)
+_p.SetShape(pcbnew.PAD_SHAPE_RECT)
+_p.SetSize(V(GPAD[2] - GPAD[0], GPAD[3] - GPAD[1]))
+_ls = pcbnew.LSET()
+_ls.AddLayer(pcbnew.F_Cu)
+_ls.AddLayer(pcbnew.F_Mask)          # exposed, no paste
+_p.SetLayerSet(_ls)
+_p.SetNumber('1')
+gp.Add(_p)
+_p.SetPosition(V(_gx, _gy))
+for _dx in (-3.0, 3.0):
+    for _dy in (-4.0, 4.0):
+        _v = pcbnew.PAD(gp)
+        _v.SetAttribute(pcbnew.PAD_ATTRIB_PTH)
+        _v.SetShape(pcbnew.PAD_SHAPE_CIRCLE)
+        _v.SetSize(V(0.7, 0.7))
+        _v.SetDrillSize(V(0.35, 0.35))
+        _v.SetLayerSet(pcbnew.PAD.PTHMask())
+        _v.SetNumber('1')
+        gp.Add(_v)
+        _v.SetPosition(V(_gx + _dx, _gy + _dy))
+
+
+
+def ground_pads(ref, rects, layer, mask):
+    """Bare ground pads: one footprint holding a rectangle of exposed copper per (x0, y0, x1, y1).
+    No net here (obstacles for the autorouter); finish_board.py ties every G* footprint to GND."""
+    fp = pcbnew.FOOTPRINT(board)
+    fp.SetReference(ref)
+    fp.SetValue('Ground pad')
+    fp.SetFPID(pcbnew.LIB_ID('echo-breakout', 'GroundPad'))
+    fp.SetAttributes(pcbnew.FP_EXCLUDE_FROM_BOM | pcbnew.FP_EXCLUDE_FROM_POS_FILES | pcbnew.FP_BOARD_ONLY)
+    board.Add(fp)
+    x0, y0, x1, y1 = rects[0]
+    fp.SetPosition(V((x0 + x1) / 2, (y0 + y1) / 2))
+    fp.Reference().SetVisible(False)
+    fp.Value().SetVisible(False)
+    for x0, y0, x1, y1 in rects:
+        p = pcbnew.PAD(fp)
+        p.SetAttribute(pcbnew.PAD_ATTRIB_SMD)
+        p.SetShape(pcbnew.PAD_SHAPE_RECT)
+        p.SetSize(V(x1 - x0, y1 - y0))
+        ls = pcbnew.LSET()
+        ls.AddLayer(layer)
+        ls.AddLayer(mask)
+        p.SetLayerSet(ls)
+        p.SetNumber('1')
+        fp.Add(p)
+        p.SetPosition(V((x0 + x1) / 2, (y0 + y1) / 2))
+    return fp
+
+
+# Tape pad: the button/mic board's ground reaches the mainboard through a strip of metal-mesh tape stuck
+# to the bare area above J45, which runs down the display edge as a sliver to a second bare area by
+# the alignment hole. Same shape here (measured from the ruler photos).
+ground_pads('GP2', [(0.6, 0.6, 9.0, 4.8), (0.6, 4.8, 2.0, 12.4), (0.6, 12.4, 5.6, 14.0)],
+            pcbnew.F_Cu, pcbnew.F_Mask)
+
+# Back of the board: the display frame carries conductive fabric gaskets that press on bare ground
+# pads on the back of the mainboard, and the GT911's ground pad rests on the one under the J30 corner.
+# Nine pads, measured from a perspective-corrected ruler photo of the back (2026-11-16), given here
+# in the board's own (top view) coordinates. No through-hole part may sit inside one: the gasket
+# would short its pins. B6 is cut short at x = 6.0 to stay clear of P3; nothing presses on it.
+BACK_PADS = [
+    (1.2, 51.8, 10.0, 58.9),      # B1: under the J30 corner (GT911 ground pad; no gasket)
+    (27.8, 51.7, 37.9, 59.4),     # B2: bottom edge
+    (99.8, 50.1, 107.1, 59.4),    # B3: bottom-right corner
+    (99.8, 34.9, 107.1, 44.7),    # B4: right edge
+    (66.7, 24.5, 74.8, 34.5),     # B5: centre
+    (1.2, 19.0, 6.0, 26.6),       # B6: display edge (no gasket)
+    (6.5, 1.8, 16.5, 9.7),        # B7: top-left
+    (74.0, 1.6, 84.2, 9.7),       # B8: top edge
+    (90.4, 2.0, 98.6, 12.0),      # B9: top edge, right
+]
+for i, r in enumerate(BACK_PADS, 1):
+    ground_pads('GB%d' % i, [r], pcbnew.B_Cu, pcbnew.B_Mask)
+
 for i, (x, y) in enumerate([(101.0, 12.0), (40.0, 57.5)], 1):
     tp = add('TP%d' % i, 'TestPoint', 'TestPoint_THTPad_D1.5mm_Drill0.7mm', 0)
     tp.SetPosition(V(x, y))
@@ -384,17 +556,16 @@ for i, (x, y) in enumerate([(101.0, 12.0), (40.0, 57.5)], 1):
 text('ECHO SHOW 5 BREAKOUT v2', 106.2, 17.5, 0.9, bold=True, rot=90)
 NOTES = [
     'ECHO SHOW 5 BREAKOUT v2 (KC19 mainboard size)',
-    'Sockets sit where the originals do.',
     'Header pin n = Echo pin n.',
     'Check pin 1 by continuity first.',
     'Unpowered only: never on a powered Echo.',
+    'Tape over header pins, not the bare pads.',
     'Touch: jumper J30 > TOUCH BUS, IO4 low,',
     'then scan I2C 0x5D and 0x14. Touch off:',
     'hold SDA/SCL/INT/RST low (no back-power).',
-    'Insulate header pins here: faces the screen.',
 ]
 for i, line in enumerate(NOTES):
-    text(line, 58.0, 31.6 + i * 1.25, 0.8, layer=pcbnew.B_SilkS)
+    text(line, 44.0, 31.5 + i * 1.25, 0.8, layer=pcbnew.B_SilkS)   # clear of back pad B5
 
 
 

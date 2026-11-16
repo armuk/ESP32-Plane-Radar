@@ -93,7 +93,10 @@ Before paying:
 J30 is 0.5 mm pitch, 8 pins, so standard parts work:
 
 1. An **8-pin, 0.5 mm FFC/FPC extension board**: two sockets back to back, joined pin for pin. Its
-   sockets must take a **0.3 mm thick** ribbon, like the Echo's touch ribbon; most do.
+   sockets must take a **0.3 mm thick** ribbon, like the Echo's touch ribbon; most do. **They must also
+   grip a ribbon that goes only 1.5 mm in**: the Echo's touch ribbon has a 3 mm tongue with 1.5 mm of
+   bare contact (made for a Hirose FH34SRJ). Many extension boards use deeper sockets (FH12 style,
+   about 3.5 mm) that won't reach its contacts; check before buying.
 2. An **8-pin, 0.5 mm FFC cable, "same side" contacts (type A)**, about 100 mm long.
 
 With a straight-through extension board, a type A cable keeps pin 1 as pin 1 whichever contact type

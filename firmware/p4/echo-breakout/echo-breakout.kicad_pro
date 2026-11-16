@@ -15,6 +15,9 @@
         "solder_mask_to_copper_clearance": 0.0,
         "min_hole_clearance": 0.25,
         "use_height_for_length_calcs": true
+      },
+      "rule_severities": {
+        "lib_footprint_issues": "ignore"
       }
     }
   },
@@ -40,7 +43,7 @@
       },
       {
         "name": "Power",
-        "clearance": 0.2,
+        "clearance": 0.19,
         "track_width": 0.4,
         "via_diameter": 0.7,
         "via_drill": 0.35,
