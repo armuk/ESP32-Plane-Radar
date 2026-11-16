@@ -31,7 +31,14 @@ EXTENDERS = [
 ]
 
 TRACE = 0.1             # signal width; 0.3 mm pitch leaves 0.2 mm gaps
-FINGER_W = 0.17         # contact width at 0.3 mm pitch (0.13 mm gaps)
+# End B contacts, to Hirose's recommended FH26 FPC pattern (catalogue p.8): two staggered rows of pads,
+# 0.6 mm pitch in each row. Odd pins (1, 3 ... n) are the row at the tip; even pins sit behind them,
+# with the odd pins' 0.1 mm leads running between. Distances are from the tip.
+PAD_W = 0.28            # Hirose: 0.3 +0.04/-0.03; 0.28 leaves 0.11 mm to the lead beside it
+PAD_ODD = (0.3, 1.0)    # tip row: Hirose 0.3 +-0.1 to 1.0 +-0.1
+PAD_EVEN = (1.15, 2.1)  # rear row: Hirose 1.1 +-0.1 to 2.1 +-0.1
+EDGE_TRIM = 0.04        # taken off the outer side of the two edge pads
+COVER_END = 2.7         # coverlay stops here (Hirose 2.5 +-0.3)
 VIA_D, VIA_HOLE = 0.55, 0.3   # JLCPCB flex "regular" via
 
 # x positions along the strip (mm from the front edge of end A)
@@ -76,6 +83,10 @@ def build(name, ref, n, lcsc, what):
     L = LENGTH
     ys = [0.3 * (k - (n + 1) / 2) for k in range(1, n + 1)]   # Echo pin k at ys[k-1] (pin 1 at -y)
 
+    def lead_end(k):
+        """x where pin k's line stops: 0.1 mm inside the back of its contact pad."""
+        return L - (PAD_ODD if k % 2 else PAD_EVEN)[1] + 0.1
+
     def seg(a, b, k, layer, w=TRACE):
         t = pcbnew.PCB_TRACK(board)
         t.SetStart(V(*a))
@@ -117,7 +128,7 @@ def build(name, ref, n, lcsc, what):
         t.SetPosition(V(x, y))
         t.SetLayer(layer)
         t.SetTextSize(pcbnew.VECTOR2I_MM(size, size))
-        t.SetTextThickness(mm(size * 0.15))
+        t.SetTextThickness(mm(max(0.15, size * 0.15)))   # JLC: >= 0.15
         t.SetTextAngleDegrees(rot)
         t.SetMirrored(mirror)
         board.Add(t)
@@ -165,13 +176,13 @@ def build(name, ref, n, lcsc, what):
         vx = XVA if i % 2 == 0 else XVB
         path([(px, y), (vx, y)], k, pcbnew.F_Cu)
         via(vx, y, k)
-        path([(vx, y), (XF0, y), (XF1, 2 * y), (XB, 2 * y), (XC, y), (L - 2.5, y)], k, pcbnew.B_Cu)
+        path([(vx, y), (XF0, y), (XF1, 2 * y), (XB, 2 * y), (XC, y), (lead_end(k), y)], k, pcbnew.B_Cu)
     # rear row: F.Cu out the back, fan out to double pitch, via, then B.Cu
     for k, px in rear:
         y = ys[k - 1]
         path([(px, y), (XF0, y), (XF1, 2 * y), (XV, 2 * y)], k, pcbnew.F_Cu)
         via(XV, 2 * y, k)
-        path([(XV, 2 * y), (XB, 2 * y), (XC, y), (L - 2.5, y)], k, pcbnew.B_Cu)
+        path([(XV, 2 * y), (XB, 2 * y), (XC, y), (lead_end(k), y)], k, pcbnew.B_Cu)
 
     # coverlay openings over each pad row (one window per row: coverlay can't make 0.1 mm webs)
     for row in (front, rear):
@@ -186,27 +197,36 @@ def build(name, ref, n, lcsc, what):
     fing.SetValue('FH26 FPC end')
     fing.SetAttributes(pcbnew.FP_EXCLUDE_FROM_BOM | pcbnew.FP_EXCLUDE_FROM_POS_FILES)
     board.Add(fing)
-    fing.SetPosition(V(L - 1.4, 0))
+    FX = L - 1.4            # footprint origin; the flip below mirrors x about it
+    fing.SetPosition(V(FX, 0))
     fing.Reference().SetVisible(False)
     fing.Value().SetVisible(False)
     for k in range(1, n + 1):
+        d0, d1 = PAD_ODD if k % 2 else PAD_EVEN
         p = pcbnew.PAD(fing)
         p.SetAttribute(pcbnew.PAD_ATTRIB_SMD)
         p.SetShape(pcbnew.PAD_SHAPE_RECT)
-        p.SetSize(pcbnew.VECTOR2I_MM(2.2, FINGER_W))      # 0.3 to 2.5 mm from the tip
+        # The two edge pads lose 0.04 mm on their outer side to keep 0.2 mm of copper-to-edge
+        # clearance (Hirose draws 0.15 mm there; JLCPCB's flex outline needs 0.2).
+        trim = EDGE_TRIM if k in (1, n) else 0.0
+        p.SetSize(pcbnew.VECTOR2I_MM(d1 - d0, PAD_W - trim))
         ls = pcbnew.LSET()
         ls.AddLayer(pcbnew.F_Cu)
         ls.AddLayer(pcbnew.F_Mask)
         p.SetLayerSet(ls)
         p.SetNumber(str(k))
         fing.Add(p)
-        p.SetPosition(V(L - 1.4, ys[k - 1]))
+        x = L - (d0 + d1) / 2
+        yk = ys[k - 1] + (trim / 2 if k == 1 else -trim / 2)
+        p.SetPosition(V(2 * FX - x, yk))                  # pre-mirrored: the flip puts it at x
     fing.Flip(fing.GetPosition(), pcbnew.FLIP_DIRECTION_LEFT_RIGHT)   # x-mirror keeps the y order
     for p in fing.Pads():
         k = 1 + round((pcbnew.ToMM(p.GetPosition().y) - Y0 - ys[0]) / 0.3)
+        d0, d1 = PAD_ODD if k % 2 else PAD_EVEN
+        assert abs(pcbnew.ToMM(p.GetPosition().x) - X0 - (L - (d0 + d1) / 2)) < 0.001, (name, k)
         p.SetNumber(str(k))
         p.SetNet(nets[k])
-    rect(pcbnew.B_Mask, L - 2.7, -F / 2 - 0.5, L + 0.5, F / 2 + 0.5)
+    rect(pcbnew.B_Mask, L - COVER_END, -F / 2 - 0.5, L + 0.5, F / 2 + 0.5)
 
     # ------------------------------------------------------------ stiffeners (drawn for the order)
     rect(pcbnew.User_1, 0, -HA, XR, HA)                   # FR4 0.8 mm, bottom face, under the socket

@@ -18,11 +18,17 @@ Each extender is a 2-layer flex PCB, 100 mm from end to end:
 
 - **End A (wide end):** an FH26W socket on the top face, on a 0.8 mm FR4 stiffener. The Echo's own
   ribbon plugs into it exactly as it plugged into the mainboard.
-- **End B (tip):** contacts made to Hirose's recommended FPC dimensions for the FH26:
+- **End B (tip):** contacts made to Hirose's recommended FPC pattern for the FH26 (catalogue page 8):
   - width 0.3 × pins + 0.3 mm
-  - 0.3 mm pitch, starting 0.3 mm from each edge
-  - exposed from 0.3 to 2.5 mm from the tip
-  - a 0.1 mm polyimide stiffener behind them makes the tip 0.2 mm thick
+  - **two staggered rows of pads**, 0.6 mm pitch in each row, as the socket's contacts are staggered:
+    - odd positions (1, 3 … n, counted from either edge): the row at the tip, 0.3 to 1.0 mm from it
+    - even positions: the row behind, 1.15 to 2.1 mm from the tip, with the odd pads' 0.1 mm leads
+      running between them
+  - pads 0.28 mm wide (Hirose: 0.3 +0.04/−0.03), which leaves 0.11 mm to the lead beside each one
+  - the two edge pads are 0.24 mm wide, trimmed on the outer side to keep 0.2 mm from the flex edge
+  - coverlay opened to 2.7 mm from the tip
+  - no copper on the top face at the tip, as Hirose advises
+  - a 0.1 mm polyimide stiffener behind them, 4 mm long, makes the tip 0.2 mm thick
 - **Plugging in:** the tip goes into the breakout's socket (or the P4 board's) in place of the Echo ribbon.
 
 **The pin order is unchanged end to end.**
@@ -104,7 +110,8 @@ sh make_jlcpcb.sh         # Gerbers, drill, CPL, renders
 
 `LENGTH` at the top of `gen_extenders.py` sets the length (100 mm). Every board passes DRC with no
 errors.
-- **Rules:** 0.1 mm tracks and clearance, regular 0.3/0.55 mm vias, 0.2 mm copper-to-edge.
+- **Rules:** 0.1 mm tracks and clearance, regular 0.3/0.55 mm vias, 0.2 mm copper-to-edge, silkscreen
+  strokes of at least 0.15 mm.
 - **One check is turned off on purpose:** solder mask bridges. Coverlay can't form 0.1 mm strips
   between pads, so each pad row and the contact area have one opening each.
 
