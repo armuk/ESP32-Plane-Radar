@@ -394,14 +394,15 @@ d1.SetPosition(V(56.0, 42.5))
 setnet(d1, 1, 'GND')       # cathode
 setnet(d1, 2, 'LED_A')
 
-for ref, x, y, n1 in (('JP1', 54.5, 50.5, 'PU_SDA'), ('JP2', 54.5, 53.0, 'PU_SCL')):
-    j = add(ref, 'Jumper', 'SolderJumper-2_P1.3mm_Bridged_RoundedPad1.0x1.5mm', 0)
-    j.SetPosition(V(x, y))
-    setnet(j, 1, n1)
-    setnet(j, 2, 'T_VDD')
+# P9: the two pull-ups' jumpers, one 2 x 2 header. A shunt across a row connects that pull-up to T_VDD
+# (top row R7/SDA, bottom row R8/SCL); with no shunt the pull-up is off.
+p9 = add('P9', 'Connector_PinHeader_2.54mm', 'PinHeader_2x02_P2.54mm_Vertical', 0)
+p9.SetPosition(V(53.3, 50.2))
+for _pad, _net in (('1', 'PU_SDA'), ('2', 'T_VDD'), ('3', 'PU_SCL'), ('4', 'T_VDD')):
+    setnet(p9, _pad, _net)
 text('TOUCH PWR', 49.0, 39.4, 0.8, bold=True)
 text('IO4 LOW=ON', 50.0, 55.6, 0.8)
-text('PULL-UPS: cut JP', 52.5, 57.4, 0.8)
+text('P9 SHUNT = PULL-UP ON', 54.0, 57.4, 0.8)
 
 # ---------------------------------------------------------------- speaker (J2 lead), where the original sits
 # Molex Pico-SPOX 87438-0243: 1.5 mm pitch, right-angle SMT, no metal side tabs. The mainboard's header
@@ -688,8 +689,8 @@ text('C2', 46.5, 50.3, 0.8)
 # The four touch lines' series resistors, and the two pull-ups with their jumpers.
 for _ref, _sig, _y in (('R3', 'SDA', 41.0), ('R4', 'SCL', 43.0), ('R5', 'INT', 45.0), ('R6', 'RST', 47.0)):
     text('%s %s' % (_ref, _sig), 62.0, _y, 0.8, halign='l')
-text('R7+JP1 SDA PU', 56.6, 50.5, 0.8, halign='l')
-text('R8+JP2 SCL PU', 56.6, 53.0, 0.8, halign='l')
+text('R7 SDA PU', 58.3, 50.2, 0.8, halign='l')
+text('R8 SCL PU', 58.3, 52.74, 0.8, halign='l')
 text('3V3 SW >', 23.6, 42.0, 0.8, halign='r')      # what P5's V1 and V2 carry
 
 # Sockets: name, end pin numbers, and which side the ribbon enters.
@@ -769,15 +770,17 @@ with open(_dsn) as f:
 with open(_dsn, 'w') as f:
     f.write(_txt.replace('(pcb "' + _dsn + '"', '(pcb "echo-breakout.dsn"', 1))
 
-# BOM for JLCPCB. The through-hole headers and sockets are fitted by JLCPCB too (Kinghelm 2.54 mm
-# straight headers, LCSC numbers looked up 2026-11-16). The two ground test loops stay as bare holes.
+# BOM for JLCPCB. The through-hole headers and sockets are fitted by JLCPCB too (2.54 mm straight
+# headers, LCSC numbers looked up 2026-11-16). The double-row ones are Hong Cheng's plain pin headers:
+# Kinghelm's KH-2.54PH180-2XnP-L8.9 parts are shrouded IDC box headers, too big for these footprints. The two ground test loops stay as bare holes.
 THT_PARTS = {
     'PinHeader_2x17_P2.54mm_Vertical': ('HC-PZ254-11.5L-2x17PZ', 'C41376108'),
-    'PinHeader_2x16_P2.54mm_Vertical': ('KH-2.54PH180-2X16P-L8.9', 'C5157639'),
-    'PinHeader_2x12_P2.54mm_Vertical': ('KH-2.54PH180-2X12P-L8.9', 'C5157635'),
+    'PinHeader_2x16_P2.54mm_Vertical': ('2541WV-2x16P', 'C25503139'),
+    'PinHeader_2x12_P2.54mm_Vertical': ('HC-PZ254-11.5L-2x12PZ', 'C41375953'),
     'PinHeader_1x08_P2.54mm_Vertical': ('KH-2.54PH180-1X8P-L11.5', 'C2905487'),
     'PinHeader_1x07_P2.54mm_Vertical': ('KH-2.54PH180-1X7P-L11.5', 'C2932700'),
     'PinHeader_1x02_P2.54mm_Vertical': ('KH-2.54PH180-1X2P-L11.5', 'C2905434'),
+    'PinHeader_2x02_P2.54mm_Vertical': ('2.54-2*2P', 'C66690'),
     'PinSocket_1x08_P2.54mm_Vertical': ('KH-2.54FH-1X8P-H8.5', 'C2905417'),
 }
 for _fp in board.GetFootprints():

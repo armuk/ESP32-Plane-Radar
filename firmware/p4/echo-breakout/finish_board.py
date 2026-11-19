@@ -106,7 +106,50 @@ def route_speaker(board):
             board.Add(t)
 
 
+def route_pullups(board):
+    """Lay the tracks around P9 (the pull-up jumper header) by hand, replacing whatever is there for
+    them: R7 and R8 to P9's pins 1 and 3, and the switched supply to pins 2 and 4. Fixed, so P9 could
+    replace the two solder jumpers of the earlier board without a full re-route: echo-breakout.ses
+    still holds that board's routing."""
+    r7, r8, p9, c1 = (board.FindFootprintByReference(r) for r in ('R7', 'R8', 'P9', 'C1'))
+    pos = lambda fp, num: [p for p in fp.Pads() if p.GetNumber() == num][0].GetPosition()
+    xy = lambda v: (pcbnew.ToMM(v.x), pcbnew.ToMM(v.y))
+    pins = {n: xy(pos(p9, n)) for n in '1234'}
+    near = lambda v: 51.0 < pcbnew.ToMM(v.x) < 56.5 and 48.5 < pcbnew.ToMM(v.y) < 53.9
+    for t in list(board.GetTracks()):
+        n = t.GetNetname()
+        if n in ('PU_SDA', 'PU_SCL') or (n == 'T_VDD' and near(t.GetStart()) and near(t.GetEnd())):
+            board.Delete(t)
+    # where the supply track from C1 is left hanging once the old jumper links are gone
+    c1p = xy(pos(c1, '1'))
+    ends = [xy(e) for t in board.GetTracks() if t.GetNetname() == 'T_VDD'
+            for e in (t.GetStart(), t.GetEnd()) if near(e)]
+    feed = min(ends, key=lambda e: (e[0] - pins['2'][0]) ** 2 + (e[1] - pins['2'][1]) ** 2) if ends else c1p
+    routes = [('PU_SDA', 0.15, [xy(pos(r7, '2')), pins['1']]),
+              ('PU_SCL', 0.15, [xy(pos(r8, '2')), pins['3']]),
+              ('T_VDD', 0.4, [feed, pins['2'], pins['4']])]
+    # The touch SDA and SCL tracks turned the corner below P9 where its pin 4 now is: turn them later.
+    box = lambda v: 55.0 < pcbnew.ToMM(v.x) < 58.0 and 52.0 < pcbnew.ToMM(v.y) < 54.5
+    for net, knee in (('T_SDA', 56.4), ('T_SCL', 56.72)):
+        diag = [t for t in board.GetTracks() if t.GetNetname() == net and box(t.GetStart()) and box(t.GetEnd())]
+        if len(diag) != 1:
+            continue                    # already routed some other way: leave it to DRC
+        a, b = sorted((xy(diag[0].GetStart()), xy(diag[0].GetEnd())))       # a: low end, b: the riser
+        board.Delete(diag[0])
+        routes.append((net, 0.15, [a, (knee, a[1]), (b[0], a[1] - (b[0] - knee)), b]))
+    for net, w, pts in routes:
+        for p, q in zip(pts, pts[1:]):
+            t = pcbnew.PCB_TRACK(board)
+            t.SetStart(pcbnew.VECTOR2I_MM(*p))
+            t.SetEnd(pcbnew.VECTOR2I_MM(*q))
+            t.SetWidth(mm(w))
+            t.SetLayer(pcbnew.F_Cu)
+            t.SetNet(board.FindNet(net))
+            board.Add(t)
+
+
 route_speaker(board)
+route_pullups(board)
 if not os.environ.get('NO_CLEAN'):
     print('removed dangling segments:', remove_dangling(board))
     print('removed dangling segments (KiCad check):', remove_dangling_kicad(board))
@@ -148,8 +191,23 @@ rules.write_project(out, POWER_CLEARANCE)
 print('saved', out, 'tracks', len(board.GetTracks()))
 
 # Placement file for JLCPCB: every part in the BOM, at its body centre (KiCad anchors a pin header on
-# pin 1, JLCPCB on the middle of the part). Y is negative down the board, as KiCad exports it.
+# pin 1, JLCPCB on the middle of the part's pads). Y is negative down the board, as KiCad exports it.
 import csv
+
+# JLCPCB measures rotation from how each part lies in its reel, KiCad from how the footprint is drawn.
+# These are the differences, in degrees anticlockwise, read off JLCPCB's placement preview on 2026-11-16:
+# its magenta pin 1 mark has to land on the footprint's pad 1. A part not listed needs none.
+JLC_ROTATION = {'PinHeader': -90, 'PinSocket': -90, 'Hirose_FH26': -90, 'SOT-23': 180,
+                'Molex_Pico-SPOX': 90}
+
+
+def jlc_rotation(fp):
+    name = str(fp.GetFPID().GetLibItemName())
+    off = next((v for k, v in JLC_ROTATION.items() if name.startswith(k)), 0)
+    rot = (fp.GetOrientationDegrees() + off) % 360
+    return rot - 360 if rot > 180 else rot
+
+
 with open(os.path.join(HERE, 'jlcpcb', 'bom.csv')) as fh:
     in_bom = {r for row in csv.DictReader(fh) for r in row['Designator'].split(',')}
 with open(os.path.join(HERE, 'jlcpcb', 'cpl.csv'), 'w') as fh:
@@ -163,8 +221,11 @@ with open(os.path.join(HERE, 'jlcpcb', 'cpl.csv'), 'w') as fh:
             ys = [p.GetPosition().y for p in fp.Pads()]
             x, y = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2
         else:
-            x, y = fp.GetPosition().x, fp.GetPosition().y
+            # JLCPCB's models are centred on their pads; this project's own footprints (J2, J30) aren't.
+            boxes = [p.GetBoundingBox() for p in fp.Pads()]
+            x = (min(q.GetLeft() for q in boxes) + max(q.GetRight() for q in boxes)) / 2
+            y = (min(q.GetTop() for q in boxes) + max(q.GetBottom() for q in boxes)) / 2
         fh.write('%s,%.6fmm,%.6fmm,Top,%.6f\n' % (fp.GetReference(), pcbnew.ToMM(x), -pcbnew.ToMM(y),
-                                                 fp.GetOrientationDegrees()))
+                                                 jlc_rotation(fp)))
 print('placement file:', len(in_bom), 'parts')
 

@@ -100,7 +100,9 @@ How to read the headers:
     supply instead of P5.
   - SDA, SCL, INT and RST come from IO5, IO6, IO7 and IO10 through 220 Ω series resistors (R3–R6).
   - SDA and SCL have 2.2 kΩ pull-ups (R7, R8) to `T_VDD`, so the pull-ups don't back-power the GT911
-    when its supply is off. To remove them, cut solder jumpers JP1 and JP2.
+    when its supply is off. Each is connected by a shunt on **P9** (2 × 2 header: top row SDA,
+    bottom row SCL). Pull a shunt off to remove that pull-up. JLCPCB fits the header, not the
+    shunts: use two standard 2.54 mm jumper caps.
   - **Firmware rule:** while `T_VDD` is off (IO4 high), keep IO5, IO6, IO7 and IO10 low or
     high-impedance. Driving one high feeds the GT911 through its 220 Ω resistor.
 
@@ -111,8 +113,8 @@ P5 to P4 with jumper wires. A wrong guess costs a wire, not a board.
 
 Printed to help assembly and fault-finding:
 
-- **Part names** beside every part and header (R1–R8, C1, C2, Q1, D1, JP1, JP2, J2, J30, J44, J46, J100,
-  P1–P8), with the touch signals named at their resistors (`R3 SDA` … `R6 RST`) and pull-ups.
+- **Part names** beside every part and header (R1–R8, C1, C2, Q1, D1, J2, J30, J44, J46, J100,
+  P1–P9), with the touch signals named at their resistors (`R3 SDA` … `R6 RST`) and pull-ups.
 - **`RIBBON` with an arrow** on the entry side of each ribbon socket, and the end pin numbers (1 and 33,
   31, 23 or 8) at each socket's ends.
 - **`! 12V ON J46 / P2: NO ECHO ADAPTER !`** on the front.
@@ -197,6 +199,10 @@ Steps:
      Earlier versions of this board had them the other way round.
    - **J30 (FH34SRJ):** the opposite: its legs and lock are inboard, and the ribbon enters on the plain
      side facing the display edge.
+   - **The placement file already carries JLCPCB's rotations** for the headers, the ESP32 sockets, the
+     three FH26W-pattern sockets, Q1 and J2 (`JLC_ROTATION` in `finish_board.py`, read off their preview
+     on 2026-11-16). In the preview, each part's magenta pin 1 mark must sit on the pad marked `1`, and
+     its legs must lie on the pads.
    - **J30's and J2's footprints are this project's own**, so JLCPCB's rotation for them is the least
      certain. J30's eight legs must be on the right, away from the display edge. J2's two tails must
      point down the board, with its open mouth at the top edge.
@@ -213,11 +219,16 @@ Steps:
      differ, by 0.2 mm at most. Its flip lock is more fragile than Hirose's.
    - Two more copies with the same drawing: Hongcheng HC-FPC-0.3-23P-FH10 (C49166929) and
      XFCN F0302-B-23-10G-R (C25170829).
-   - **P1:** its pins stand 6 mm above the plastic, like the single-row headers. P2 and P3 are the
-     shorter 8.9 mm parts.
+   - **P1, P2 and P3 are plain 11.5 mm pin headers**: Hong Cheng for P1 and P3 (P3:
+     HC-PZ254-11.5L-2x12PZ, C41375953), HanElectricity 2541WV-2x16P (C25503139) for P2. Their pins
+     stand 6 mm above the plastic, like the single-row headers. Two other 2 × 16 headers fit, but
+     showed as a blank block in JLCPCB's preview: Hong Cheng HC-PZ254-11.5L-2x16PZ (C41376107) and
+     Kinghelm KH-2.54PH180-2X16P-L11.5 (C19630944).
+   - **Don't use Kinghelm's KH-2.54PH180-2XnP-L8.9 parts** (C5157640, C5157639, C5157635). They are
+     shrouded IDC box headers, not plain pin headers: P2's and P3's bodies would collide.
    - To go back to a first choice, change its number in `gen_board.py` and rebuild.
 5. **Through-hole parts are in the BOM too**, so JLCPCB fits the headers and the two ESP32 sockets
-   (2.54 mm straight parts, Kinghelm apart from P1):
+   (2.54 mm straight parts, Hong Cheng and Kinghelm):
    - This needs their through-hole assembly, which is priced per joint; there are about 150 joints.
    - Check each header's position and rotation in the placement preview. `cpl.csv` gives the centre of
      each part, which is what JLCPCB expects, but their library part may sit a quarter-turn off.
@@ -247,6 +258,10 @@ $PY finish_board.py       # import routes, remove stubs, ground pours -> echo-br
 kicad-cli pcb drc echo-breakout.kicad_pcb
 sh make_jlcpcb.sh         # Gerbers, drill, CPL
 ```
+
+**The committed `echo-breakout.ses` predates P9.** A fresh autoroute isn't needed for it: `finish_board.py`
+lays the tracks around P9 itself (`route_pullups`), as it does for the speaker. A new session from
+Freerouting works too.
 
 Routing results vary between Freerouting runs. If the `comm` check lists any nets, run it again (a
 different `-mt` thread count helps). Freerouting 2.1.0 runs on Java 21; the 2.5.0 macOS CLI build crashed
