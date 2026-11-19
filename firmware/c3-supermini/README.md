@@ -267,6 +267,8 @@ test/
 | SCL (SCLK) | GPIO **4** |
 | BOOT (user) | GPIO **9** |
 
+[HARDWARE.md](HARDWARE.md) has the full board details: the Super Mini's pin map and free pins, the display module's markings and settings, and options for dimming the backlight.
+
 ## Build
 
 ```bash

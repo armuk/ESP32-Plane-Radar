@@ -37,6 +37,8 @@ constexpr unsigned long kBootResetHoldMs = 3000UL;
 constexpr unsigned long kBootTapMinMs = 40UL;
 
 // --- Display: GC9A01 1.28" round 240×240 (SPI) ---
+// Pin map, free pins and module details: HARDWARE.md. The 7-pin module has
+// no backlight pin, so the backlight is always on while it has power.
 constexpr gpio_num_t kDisplayPinRst = GPIO_NUM_0;
 constexpr gpio_num_t kDisplayPinCs = GPIO_NUM_1;
 constexpr gpio_num_t kDisplayPinDc = GPIO_NUM_10;
