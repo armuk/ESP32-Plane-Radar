@@ -1,8 +1,10 @@
 # Echo Show 5 (2nd gen) enclosure: hardware notes
 
 Goal: put Plane Radar inside the case of an **Amazon Echo Show 5, 2nd gen (2021)**, keeping its
-original 5.5" screen, touch layer, glass and outside look, and replacing everything else with an
-ESP32-P4. The enclosure matters more than any of the original electronics.
+original 5.5" screen, touch layer, glass and outside look, and replacing everything else with a
+**Raspberry Pi Compute Module 4** on a board of our own. It shows the radar on one page and the full Home
+Assistant dashboard on the next, a swipe apart. The enclosure matters more than any of the original
+electronics.
 
 Status: **research and measurement.** Nothing here is built or tested yet. Items marked *unconfirmed*
 are inferred from markings or photos and still need checking on the unit.
@@ -10,28 +12,47 @@ are inferred from markings or photos and still need checking on the unit.
 The unit was fully opened (mainboard out, shield lids off for chip IDs), reassembled and powered on: it still
 works. It stays usable as a working reference for the powered measurements.
 
-## Decision: ESP32-P4, not Linux on the Echo
+## Decision: a Raspberry Pi CM4 on our own board
 
-Two routes were considered:
+The objection to running Linux on the Echo's own hardware was never Linux or network exposure as such: it
+was exposure from a system we can't easily audit, secure, update or configure. The Echo should show the
+**full Home Assistant dashboard** (any card, custom cards, camera streams), which needs a real web browser.
+Three routes were considered:
 
 | Route | For | Against |
 |---|---|---|
-| Keep the Echo's insides and run [TECHO5](https://github.com/HuskerMinion/techo5) (Alpine Linux, unlocked with the amonet exploit), porting the radar to a TECHO5 "custom screen" ([techo5#447](https://github.com/HuskerMinion/techo5/pull/447)) | No hardware work; perfect fit | End-of-life downstream Linux 4.9 kernel; closed MediaTek MT7668 Wi-Fi driver and firmware; a large set of network services; not this firmware |
-| Gut the Echo; drive its panel and touch from an ESP32-P4 | Small firmware we understand, small network attack surface; one codebase with the C3, S3 and P4 builds | Panel bring-up and an adapter or replacement board to design |
+| Keep the Echo's insides and run [TECHO5](https://github.com/HuskerMinion/techo5) (Alpine Linux, unlocked with the amonet exploit), porting the radar to a TECHO5 "custom screen" ([techo5#447](https://github.com/HuskerMinion/techo5/pull/447)) | No hardware work; perfect fit | End-of-life downstream Linux 4.9 kernel; closed MediaTek MT7668 Wi-Fi driver and firmware; services we didn't choose; we can't audit or patch it |
+| Gut the Echo; drive its panel and touch from an ESP32-P4 | Small firmware we understand; one codebase with the C3, S3 and P4 builds; boots in about a second; well under 1 W | Only native controls built one at a time, no Home Assistant dashboard; no hardware H.264 decoder, so no camera streams |
+| **Gut the Echo; Raspberry Pi CM4 on our own carrier board** | Full Home Assistant dashboard in a browser; an OS we build, configure and patch ourselves; mainline-supported panel and touch drivers; GPU and RAM to spare | An OS to keep patched; a harder board (high-density connectors, impedance-controlled DSI); a few watts of heat in a sealed case; 10–30 s boot; the radar is rewritten for this build |
 
-**Chosen: ESP32-P4.** Keeping network exposure small comes first. TECHO5 is still useful on a bench
-unit (kept off the home network) to identify the panel variant and measure voltages before stripping it.
+**Chosen: CM4.** The ESP32-P4 stays the target for the round 4C board ([PLAN.md](PLAN.md)). TECHO5 is
+still useful on a bench unit (kept off the home network) to identify the panel variant and measure voltages.
 
-### Why the P4 and not something more powerful
-- It is the only ESP32 with MIPI-DSI, so the PlatformIO, LovyanGFX-sprite, settings and OTA code all carry over.
-- 960×480 = 460,800 pixels, fewer than the 720×720 (518,400) of the round 4C target, so the P4 already has headroom.
-- The real limit is PSRAM bandwidth for full-frame redraws, not CPU: redraw only changed areas, keep static
-  range rings in their own layer, and use the PPA (2D engine) for copies, blending and the 90° rotation.
-- Faster MCUs with DSI (i.MX RT1170, STM32 with DSI, RA8D1) have no Wi-Fi and would mean a rewrite.
-  Linux boards (Raspberry Pi CM4/CM5 and similar) bring back an OS to keep patched.
+### Why the CM4 and not the CM5
+- **Power:** the original adapter gives 12 V at 1.25 A (15 W, see "Power and IO board"). A CM4 under load
+  plus the backlight fits; a CM5 can draw 10 W or more on its own.
+- **Heat:** the case is sealed with no fan. A CM4's few watts are close to what the Echo's MT8163 gave off
+  in the same case; a spreader to the metal frame should do. A CM5 would need more.
+- **DSI:** the panel needs 2 lanes; the CM4's DSI1 port has 4, so either port works.
+- **Variant:** CM4 with on-board Wi-Fi, eMMC and **4 GB RAM** (a browser on Home Assistant manages in 2 GB;
+  4 GB leaves room for the radar and image caching).
 
-Starting board: **Waveshare ESP32-P4-NANO** (about 50 × 50 mm, ESP32-C6 for Wi-Fi over ESP-Hosted,
-DSI connector). Check it against the cavity once measured.
+## Software
+
+Kept small, auditable and patchable:
+
+| Layer | Choice |
+|---|---|
+| OS | **Raspberry Pi OS Lite** (Debian), only the packages needed, unattended security updates. Patching through Debian is far less work for one person than rebuilding a Buildroot image for each fix. Add a read-only root (overlayfs) if power-loss corruption shows up |
+| Panel | Device tree overlay using the mainline `panel-sitronix-st7701` driver with this panel's init sequence. Amazon's driver is GPL: take values from our own DCS reads and measurements, don't copy its tables |
+| Touch | Mainline `goodix` driver, GT911 at 0x5d, axes rotated to match the panel. Never write its config block |
+| Display stack | The `cage` single-app Wayland compositor, running our own launcher |
+| Launcher | A small native program on **WPE WebKit** holding **two web views**: the radar and Home Assistant. A horizontal swipe switches between them. Each view keeps its own origin and storage, so Home Assistant's frame protection (`use_x_frame_options`) stays on |
+| Radar | A local web app (HTML canvas and JavaScript) served **on loopback only** by a small local service that does the ADS-B, route and weather fetches. Keeps working when Home Assistant is down. The C3 firmware's projection, range and label-layout logic is the reference for the port |
+| Home Assistant | Logged in as a **dedicated non-admin user**, over HTTPS |
+| Network | Firewall denying all inbound connections; no SSH by default (key-only, behind a switch, when needed); nothing listening off loopback |
+| Buttons and LEDs | J100's buttons as range, brightness and screen-off through `gpio-keys`; LEDs for stale data or Wi-Fi down |
+| Sound | I²S amplifier on the carrier to the original speaker (J2), for alerts and Home Assistant media |
 
 ## Screen size and layout
 
@@ -63,7 +84,7 @@ That driver is GPL: link to it, don't copy its tables into this repository.
 | DSI PLL | 212 MHz (about 424 Mbit/s per lane), spread spectrum off; HS_TRAIL 5, HS_PRPR 4 |
 | Timings (Truly) | H: sync 6, back porch 20, front porch 30, active 480 (total 536). V: sync 6, back porch 16, front porch 21, active 960 (total 1003). About 32.3 MHz pixel clock at 60 Hz (measured 59.64 Hz) |
 | Supplies | **2.8 V** analog (`lcm-vgp`, from the MT6323's VIO28 output) and **1.8 V** logic (`lcm-vio`, from the MT6323's VGP3 output), per the driver's comments. Power-on order: **2.8 V first, then 1.8 V**; power-off is the reverse. No separate power chip on the panel side ("no external lcm-pmic") |
-| Reset | high, 10 ms, low, 10 ms, high, then wait **120 ms**. Driven by a processor GPIO, so very likely **1.8 V logic**: from the P4's 3.3 V GPIO use a level shifter or an open-drain output pulled up to 1.8 V *(confirm the level when powered)* |
+| Reset | high, 10 ms, low, 10 ms, high, then wait **120 ms**. Driven by a processor GPIO, so very likely **1.8 V logic**: from the CM4's 3.3 V GPIO use a level shifter or an open-drain output pulled up to 1.8 V *(confirm the level when powered)* |
 | Init | the variant's register table, then sleep-out (0x11) and display-on (0x29) |
 | Variant select | the bootloader reads a voltage on the ribbon (MT8163 AUXADC channel 0, presumably a resistor on the panel side) and passes `nt35521_id=<n>` to the kernel |
 | Backlight | LED string driven by a boost converter on the mainboard (see J44 below); Linux exposes 0–255 |
@@ -92,7 +113,7 @@ green solder mask (probably the panel's or the backlight's flex).
 
 Confirm at bring-up without guessing:
 1. Read the display ID over DSI (DCS 0xDA / 0xDB / 0xDC, or 0x04) and log it.
-2. Once the ribbon is mapped, read the panel-ID pin with the P4's ADC.
+2. Once the ribbon is mapped, read the panel-ID pin through an ADC on the carrier (the CM4 has none of its own).
 
 The firmware can do either at boot and pick the matching init table, so it works with whichever panel a unit has.
 
@@ -107,7 +128,7 @@ The firmware can do either at boot and pick the matching init table, so it works
 | Connector | **8 pins**, numbered 1 and 8 on the ribbon; plugs into **J30** on the mainboard |
 | I²C | address **0x5d** on the Echo (I²C bus 2 in Linux). The address (0x5d or 0x14) depends on INT's level during reset |
 | Axes | raw 480×960, portrait like the panel |
-| Driver | ESP-IDF `esp_lcd_touch_gt911`; same register protocol as the GT9271 in the 4C plan |
+| Driver | Linux `goodix` on the CM4 (ESP-IDF `esp_lcd_touch_gt911` for bench tests from an ESP32); same register protocol as the GT9271 in the 4C plan |
 
 **Never write the GT911's configuration block** (registers from 0x8047). The chip stores tuning for this
 exact sensor; a generic config from an example sketch can leave touch inaccurate or dead. Read only.
@@ -218,8 +239,8 @@ chip), so they are probably GND *(unconfirmed)*.
 
 Expect among pins 2–7: VDD (2.8–3.3 V), maybe a separate VDDIO (1.8 V or the main supply), SCL and SDA
 (idle high at the I/O voltage), INT (changes when the screen is touched) and RST (high). **If the bus runs
-at 1.8 V**, either feed VDDIO 3.3 V from the P4 side (if it has its own pin) or add an I²C level shifter.
-The P4-NANO's GPIOs are 3.3 V.
+at 1.8 V**, either feed VDDIO 3.3 V from the carrier (if it has its own pin) or add an I²C level shifter.
+The CM4's GPIOs are 3.3 V.
 
 ## The mainboard
 
@@ -237,17 +258,16 @@ Under the clip-on shield lids (the lids have snap dimples and lift off without h
   `CTGC1S63`). Confirmed. The panel driver names two of its outputs as the screen's supplies (see "Common to
   every variant"), so the new board needs its own **2.8 V and 1.8 V regulators** for the screen.
 - **2 × Samsung K4B4G1646E-BYMA**: 4 Gbit (512 MB) DDR3L memory each, x16, 1.35 V. Together **1 GB of RAM**
-  on a 32-bit bus. It goes with the mainboard; the P4-NANO has 32 MB PSRAM, which is enough for two
-  960×480 frame buffers.
+  on a 32-bit bus. It goes with the mainboard; the CM4 brings its own RAM.
 - next to the MT6323, a **26 MHz TCXO** marked `BN26.0 D047` (probably KDS, DSB211SDN/DSB221SDN family): the
   reference clock MediaTek platforms share between the processor, power chip and Wi-Fi. It goes with the
-  mainboard; the P4-NANO has its own crystals.
+  mainboard; the CM4 has its own crystals.
 - a **Samsung KLM8G1GETF** 8 GB eMMC 5.1 (the Echo's storage). It holds the Echo's software and the
   owner's data, probably including the Wi-Fi password and Amazon account tokens. Before the mainboard is
   thrown away: deregister the device from the Amazon account, and either factory-reset it while it still
   runs or physically destroy this chip.
 - a **MediaTek MT7658CSN**, the Wi-Fi and Bluetooth combo chip, which TECHO5's closed `mt7668` driver supports.
-It goes with the mainboard, so nothing here carries over; the P4 build uses the NANO's ESP32-C6 instead. The
+It goes with the mainboard, so nothing here carries over; the CM4's own Wi-Fi replaces it. The
 power-management chip, the one whose rails would hint at the screen and touch voltages, is still to be found.
 
 ### Connectors
@@ -400,8 +420,8 @@ Options, in order of preference:
    traces, if you want them physically gone. This leaves the buttons, LEDs and switch working.
 3. Covering the case's sound holes adds nothing once they are dead electrically.
 
-Also make sure the P4 board itself adds no microphone. Use one without on-board mics, or leave its mic
-input unpopulated and unrouted. Never route J100's mic pins to a codec on the P4 side.
+Also make sure the carrier adds no microphone: no mic input, codec or ADC, and never route J100's mic
+pins anywhere on it.
 
 Repurposing the rest of the top board:
 - **Mic-mute button** (Linux `gpio-404` on the Echo) and **volume buttons** (`gpio-393`, `gpio-394`):
@@ -417,8 +437,7 @@ A single speaker on a plain two-wire lead into the mainboard's **J2**. On this u
 **Maxim MAX98396EWB** (confirmed): a digital-input (I²S/TDM) class-DG mono amplifier running from up to
 20 V, in a tiny wafer-level package. It leaves with the mainboard; salvaging it isn't practical.
 
-To reuse the speaker: drive it from a small class-D amplifier on the P4 side, either the P4 board's own
-codec and amplifier if it has one *(check the P4-NANO schematic)*, or an I²S amplifier on the adapter
+To reuse the speaker: drive it from an I²S class-D amplifier on the carrier
 board. A common 5 V I²S part such as the MAX98357A gives about 1–2 W into this 8 Ω speaker, plenty for
 alert sounds.
 
@@ -448,14 +467,14 @@ board's edge next to C9211. Molex's 87438-0243 header takes the original lead un
 | IO cable | **KC19 IO-MLB Version 2.1**, `E495366`, `0722 L 94V-0`, data matrix `CH2LKG0IOM207303YQ`. Plugs into J46 (31 pins) |
 | Inner case | QR code `KC19HTL03TLF22052721878` |
 
-For the P4: a buck converter from 12 V to 5 V for the board; the backlight boost can run from 5 V or 12 V.
+For the CM4: a buck converter from 12 V to 5 V (3 A or more) for the board; the backlight boost can run from 5 V or 12 V.
 
 ### The IO board in detail
 
 | Ref | What | Notes |
 |---|---|---|
 | **J3** | DC barrel jack (12 V in) | Metal shell marked `125` |
-| **J2** | **Micro-USB** socket, mid-mount (confirmed) | The Echo's service port. Keep it for flashing the P4 |
+| **J2** | **Micro-USB** socket, mid-mount (confirmed) | The Echo's service port. Keep it for reflashing the CM4's eMMC (`rpiboot`) |
 | **J1** | **Unpopulated** footprint: two locating holes, slotted pads, a jack-shaped outline | Almost certainly a **3.5 mm audio jack** left off this model. **The case has no hole for it:** there's a faint guide mark where it would be, but the plastic is solid (the mould was changed). Not used |
 | **J4** | 31-pin FPC connector, pins 1–31 marked | Cable to the mainboard's **J46** |
 | **D305** | SMA diode marked `15A 2147` | Probably an **SMAJ15A TVS diode** (15 V stand-off) clamping surges on the 12 V input *(unconfirmed)*; 2147 is likely a date code (2021, week 47) |
@@ -468,10 +487,10 @@ For the P4: a buck converter from 12 V to 5 V for the board; the backlight boost
 | TP16, TP17 | Test points | Near J4, on the back |
 | CLIP2 and the second metal tab | Grounding clips to the chassis screws | |
 
-Reusing this board as is keeps the DC jack and USB port lined up with the case. On the P4 side:
+Reusing this board as is keeps the DC jack and USB port lined up with the case. On the carrier:
 - 12 V from J4 goes to the 5 V buck (and the backlight boost); the board's TVS and filtering stay in place.
-- USB D+/D− go to the P4's USB Serial/JTAG (GPIO24/25 on the P4-NANO *(check its schematic)*), so the
-  rear port flashes and monitors the radar. That is full-speed USB, fine over this cable.
+- USB D+/D− go to the CM4's USB 2.0 port, so the rear port can reflash the eMMC (`rpiboot`, with
+  `nRPIBOOT` pulled low) and act as a service port. Keep the pair matched; check it at high speed over this cable.
 - Don't connect USB VBUS straight to the 5 V rail: when the 12 V adapter and a computer are both plugged
   in, the two supplies would fight. Use it only through a diode or ideal-diode OR, or just to sense that
   USB is present.
@@ -822,7 +841,7 @@ Results:
 | Touch wiring (device tree) | GT911 on I²C bus 2 (`i2c@11009000`) at 0x5d. **RST = GPIO 123, INT = GPIO 122** (MT8163 numbering). **AVDD (`vdd_ana`) = MT6323 `vmch`**, set to **3.0 V**; the touch subsystem's `vtouch` = MT6323 **`vgp1`, 3.3 V**, always on |
 | Touch state in TWRP | Both supplies report **enabled** (`vmch` 3.0 V, `vgp1` 3.3 V). RST (GPIO 123) is an output driven **high** and reads back high: reset released. INT (GPIO 122) is an input, no pull, reading **low**. So software has the GT911 powered and out of reset, yet it doesn't acknowledge: the fault is physical. With probes, check at J30 for ~3.0 V and ~3.3 V, RST high, and SDA/SCL idling high |
 | **GT911 factory configs (device tree)** | The device tree carries **five 186-byte GT911 configs** (`goodix,cfg-group0`–`4`), one per touch-sensor ID: 480×960, 5 touches, valid checksums. Only three are distinct: group0 (version 0x49, checksum 0xCC), group2 (0x49, 0xED), and groups 1/3/4 (0x54, 0xF4). The driver picks one by the sensor ID the chip reports (register 0x814A). **This is the config backup**: if the GT911 ever loses its config, restore the group matching its sensor ID. Saved locally in `echo-show-5-dumps/cronos-dt.txt` |
-| I²C speed | All three buses run at **300 kHz** (`clock-frequency` 300000): GT911 on bus 2 at that speed is a safe P4 setting (100 or 400 kHz also within GT911 spec) |
+| I²C speed | All three buses run at **300 kHz** (`clock-frequency` 300000): GT911 on bus 2 at that speed is a safe setting (100 or 400 kHz also within GT911 spec) |
 | Panel reset | `lcm_reset_gpio` = **GPIO 83**: output, high (released) while the panel runs |
 | Pin functions (debugfs pinmux) | **Backlight PWM = MT8163 pin 59 `DISP_PWM`**, in its PWM function (mode 1), output. Touch I²C = pins 77/78 (`SDA2`/`SCL2`). Touch INT/RST use pins 122/123, whose primary names are `MSDC1_CLK`/`MSDC1_DAT0` (SD-card pins reused as GPIOs, with the SD-card supply `vmch` as touch AVDD). Panel reset = pin 83 `LCM_RST`; `DSI_TE` (pin 84) unused (video mode) |
 | Backlight | `lcd-backlight` uses **`led_mode` 5** (MediaTek display PWM, `disp_pwm0`), default brightness 90, `custom-brightness-table` and a thermal limiter (`thermal_brightness` 88). Its listed `gpios` (GPIO 43) stays an output **low** at both brightness 0 and 255, so it isn't the boost enable; the PWM itself comes from the display block's PWM pin. Find it on J44 by probing with the brightness loop (a PWM line averages to a different DC level as brightness changes) |
@@ -941,26 +960,35 @@ so DSI through the J44 extender is the least certain part.
 
 | Item | Spec |
 |---|---|
-| Waveshare ESP32-P4-NANO | With ESP32-C6 Wi-Fi; check the chip revision on arrival |
-| 12 V → 5 V buck module | At least 2 A, fixed 5 V or adjustable |
+| Raspberry Pi CM4 | With Wi-Fi, eMMC and 4 GB RAM (e.g. CM4104032) |
+| Raspberry Pi CM4 IO Board | Official carrier: proves the OS, panel overlay, touch and launcher before our own board exists |
+| 12 V → 5 V buck module | At least 3 A, fixed 5 V or adjustable |
 | A spare 12 V supply or the original LA23UK adapter | 12 V, 1.25 A or more |
 
 ## Build plan
 
-1. **Bench prototype.** P4-NANO plus a small adapter PCB carrying: a J44-compatible 33-pin socket,
-   1.8 V and 2.8 V regulators, a backlight boost LED driver with PWM dimming, an 8-pin socket for the touch
-   ribbon, and the DSI connector to the NANO. DSI cannot go through jumper wires or a generic breakout:
-   the pairs need short, length-matched, 100 Ω differential traces. Proves panel init, touch and backlight.
-2. **Drop-in replacement mainboard.** A PCB with the KC19 board's outline and mounting holes, a P4 module
-   (with C6 for Wi-Fi), and **J44, J30, J46 and J100 in the same positions** so every original cable plugs
-   straight in. USB from J46 goes to the P4 for flashing; J100's buttons become range and mute.
+1. **Software on a stock Pi.** The launcher, the radar web app and its local data service, and Home
+   Assistant in the second view, on any Pi 4 or the CM4 IO Board with an HDMI screen. None of this needs
+   the Echo.
+2. **Bench prototype.** CM4 on its official IO Board, plus a small adapter PCB from its 22-pin DSI
+   connector: a J44-compatible 33-pin socket, 1.8 V and 2.8 V regulators, reset level shifting, a
+   backlight boost LED driver with PWM dimming, and an 8-pin socket for the touch ribbon. DSI cannot go
+   through jumper wires or a generic breakout: the pairs need short, length-matched, 100 Ω differential
+   traces. Proves the panel overlay, touch and backlight.
+3. **Drop-in carrier board.** A PCB with the KC19 board's outline and mounting holes, the CM4 on its two
+   100-pin board-to-board connectors, and **J44, J30, J46 and J100 in the same positions** so every
+   original cable plugs straight in. It also carries the 12 V → 5 V buck (3 A or more), the panel
+   supplies, the backlight boost, an I²S amplifier for the speaker, and a heat spreader path to the
+   metal frame. USB from J46 goes to the CM4's USB 2.0 port, with a way to pull `nRPIBOOT` low (button or
+   jumper) so the rear port can reflash the eMMC.
 
-### Firmware changes (on top of [PLAN.md](PLAN.md))
-- A board variant for this enclosure: 960×480, panel rotated 90°, its own pins.
-- Panel driver: `esp_lcd` MIPI-DSI with the variant's init table chosen at boot from the ID read.
-- Touch: GT911 at 0x5d, with axes rotated to match the panel.
-- Layout: radar on the left, information panel on the right.
-- Backlight: PWM through the boost driver.
+### Drop-in board checks
+- **Height:** the mainboard occupied 8.8 mm. Carrier, connector stack height (1.5 mm or 3 mm mated),
+  the CM4 and its tallest parts, plus any heat spreader, must fit. Choose the stack height from this.
+- **Wi-Fi antenna:** the CM4's PCB antenna sits inside a plastic case but near the metal display frame;
+  check signal, or route its U.FL to an antenna where the Echo's Wi-Fi antennas were.
+- **Power budget:** CM4 at full load, backlight at full brightness and the speaker together must stay
+  within the adapter's 15 W.
 
 ## Open questions
 
@@ -976,6 +1004,8 @@ so DSI through the J44 extender is the least certain part.
 - [ ] Backlight LED voltage, string count and current (from R335/R336 values).
 - [ ] J4/J46 pinout (power, USB, J1) and J100 pinout (buttons, LEDs, privacy switch, microphones).
 - [ ] Microphones (analog, per TECHO5): decide whether to also remove MK1 and MK2 from the top board.
-- [ ] Internal cavity dimensions, for the P4-NANO fit and the drop-in board outline.
-- [ ] Speaker (8 Ω, Pico-SPOX 2-pin): does the P4 board have an amplifier to drive it, or add one?
-- [ ] Will the P4-NANO (with its module, connectors and any headers) fit within the space the 8.8 mm tall mainboard occupied?
+- [ ] Internal cavity dimensions, for the drop-in carrier outline and heat spreader.
+- [ ] Speaker (8 Ω, Pico-SPOX 2-pin): choose the carrier's I²S amplifier (e.g. MAX98357A at 5 V).
+- [ ] Will the carrier, CM4 and connector stack fit within the 8.8 mm the mainboard occupied?
+- [ ] CM4 Wi-Fi inside the case: PCB antenna or U.FL to an external antenna?
+- [ ] Power: CM4 full load + full backlight + speaker within 15 W?

@@ -2,7 +2,7 @@
 
 A test board **the size and shape of the Echo's mainboard** (KC19-TI MLB, 108 × 60 mm). It screws into
 the rear case in the mainboard's place, so every original ribbon plugs straight in. It's for mapping and
-testing the Echo Show 5 (2nd gen, "cronos") parts before the P4 board is designed. See
+testing the Echo Show 5 (2nd gen, "cronos") parts before the CM4 carrier board is designed. See
 [ECHO-SHOW-5.md](../ECHO-SHOW-5.md) for the hardware findings it serves.
 
 ![Top](renders/top.png)

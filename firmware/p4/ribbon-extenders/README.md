@@ -1,7 +1,7 @@
 # Echo Show 5 ribbon extenders
 
 Flex extension cables that make the Echo's short ribbons about **100 mm longer**. With them, the
-[breakout board](../echo-breakout/README.md) (and later the P4 board) can sit on the bench beside the
+[breakout board](../echo-breakout/README.md) (and later the CM4 carrier) can sit on the bench beside the
 open Echo instead of screwed into its case. See [ECHO-SHOW-5.md](../ECHO-SHOW-5.md) for the hardware.
 
 | Extender | Echo ribbon | Socket at end A (LCSC) | Width: socket end / body / tip |
@@ -29,7 +29,7 @@ Each extender is a 2-layer flex PCB, 100 mm from end to end:
   - coverlay opened to 2.7 mm from the tip
   - no copper on the top face at the tip, as Hirose advises
   - a 0.1 mm polyimide stiffener behind them, 4 mm long, makes the tip 0.2 mm thick
-- **Plugging in:** the tip goes into the breakout's socket (or the P4 board's) in place of the Echo ribbon.
+- **Plugging in:** the tip goes into the breakout's socket (or the carrier's) in place of the Echo ribbon.
 
 **The pin order is unchanged end to end.**
 - Echo pin 1 is on the edge marked `PIN 1` at both ends, so the breakout's header labels stay correct.
