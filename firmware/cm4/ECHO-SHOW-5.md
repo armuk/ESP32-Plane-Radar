@@ -2,7 +2,7 @@
 
 Goal: put Plane Radar inside the case of an **Amazon Echo Show 5, 2nd gen (2021)**, keeping its
 original 5.5" screen, touch layer, glass and outside look, and replacing everything else with a
-**Raspberry Pi Compute Module 4** on a board of our own. It shows the radar on one page and the full Home
+**Raspberry Pi Compute Module 4 or 5** on a board of our own. It shows the radar on one page and the full Home
 Assistant dashboard on the next, a swipe apart. The enclosure matters more than any of the original
 electronics.
 
@@ -12,7 +12,7 @@ are inferred from markings or photos and still need checking on the unit.
 The unit was fully opened (mainboard out, shield lids off for chip IDs), reassembled and powered on: it still
 works. It stays usable as a working reference for the powered measurements.
 
-## Decision: a Raspberry Pi CM4 on our own board
+## Decision: a Raspberry Pi CM4 or CM5 on our own board
 
 The objection to running Linux on the Echo's own hardware was never Linux or network exposure as such: it
 was exposure from a system we can't easily audit, secure, update or configure. The Echo should show the
@@ -23,20 +23,22 @@ Three routes were considered:
 |---|---|---|
 | Keep the Echo's insides and run [TECHO5](https://github.com/HuskerMinion/techo5) (Alpine Linux, unlocked with the amonet exploit), porting the radar to a TECHO5 "custom screen" ([techo5#447](https://github.com/HuskerMinion/techo5/pull/447)) | No hardware work; perfect fit | End-of-life downstream Linux 4.9 kernel; closed MediaTek MT7668 Wi-Fi driver and firmware; services we didn't choose; we can't audit or patch it |
 | Gut the Echo; drive its panel and touch from an ESP32-P4 | Small firmware we understand; one codebase with the C3, S3 and P4 builds; boots in about a second; well under 1 W | Only native controls built one at a time, no Home Assistant dashboard; no hardware H.264 decoder, so no camera streams |
-| **Gut the Echo; Raspberry Pi CM4 on our own carrier board** | Full Home Assistant dashboard in a browser; an OS we build, configure and patch ourselves; mainline-supported panel and touch drivers; GPU and RAM to spare | An OS to keep patched; a harder board (high-density connectors, impedance-controlled DSI); a few watts of heat in a sealed case; 10–30 s boot; the radar is rewritten for this build |
+| **Gut the Echo; Raspberry Pi CM4 or CM5 on our own carrier board** | Full Home Assistant dashboard in a browser; an OS we build, configure and patch ourselves; mainline-supported panel and touch drivers; GPU and RAM to spare | An OS to keep patched; a harder board (high-density connectors, impedance-controlled DSI); a few watts of heat in a sealed case; 10–30 s boot; the radar is rewritten for this build |
 
-**Chosen: CM4.** The ESP32-P4 stays the target for the round 4C board ([firmware/p4](../p4/README.md)). TECHO5 is
+**Chosen: a carrier that takes a CM4 or a CM5.** The ESP32-P4 stays the target for the round 4C board ([firmware/p4](../p4/README.md)). TECHO5 is
 still useful on a bench unit (kept off the home network) to identify the panel variant and measure voltages.
 
-### Why the CM4 and not the CM5
-- **Power:** the carrier is powered over USB-C PD (up to 45 W; see [CARRIER.md](CARRIER.md)), so power no
-  longer limits the choice. A CM4 under load draws about 7 W; a CM5 can draw 10 W or more on its own, and
-  all of it becomes heat.
-- **Heat:** the case is sealed with no fan. A CM4's few watts are close to what the Echo's MT8163 gave off
-  in the same case; a spreader to the metal frame should do. A CM5 would need more.
-- **DSI:** the panel needs 2 lanes; the CM4's DSI1 port has 4, so either port works.
-- **Variant:** CM4 with on-board Wi-Fi, eMMC and **4 GB RAM** (a browser on Home Assistant manages in 2 GB;
-  4 GB leaves room for the radar and image caching).
+### CM4 or CM5
+The carrier takes either module unchanged (see [CARRIER.md](CARRIER.md), "CM4 or CM5"): the display on
+DSI1 and the camera on CAM1, since the CM4's DSI0 and CAM0 pins carry USB 3.0 on a CM5.
+- **Power:** USB-C PD (up to 45 W) covers either. A CM4 under load draws about 7 W; a CM5's supply should
+  allow up to 12.5 W (2.5 A at 5 V).
+- **Heat decides which to fit.** The case is sealed with no fan and can shed roughly 8–12 W in total
+  (estimate). The SoC's heat goes to the speaker module's copper plate. A CM5 renders the dashboard more
+  smoothly and finishes bursts sooner; for sustained loads its clock is capped in software. The bench stage
+  measures both in the closed case.
+- **Variant:** on-board Wi-Fi, eMMC and **4 GB RAM** (a browser on Home Assistant manages in 2 GB; 4 GB
+  leaves room for the radar and image caching).
 
 ## Software
 
@@ -54,7 +56,7 @@ Kept small, auditable and patchable:
 | Network | Firewall denying all inbound connections; no SSH by default (key-only, behind a switch, when needed); nothing listening off loopback |
 | Buttons and LEDs | J100's buttons as range, brightness and screen-off through `gpio-keys`; LEDs for stale data or Wi-Fi down |
 | Sound | I²S amplifier on the carrier to the original speaker (J2), for alerts and Home Assistant media |
-| Optional hardware | Bluetooth, USB data, microphones (voice control) and camera all fitted, each **physically switched off by removing a jumper**; see [CARRIER.md](CARRIER.md), "Jumper block" |
+| Optional hardware | Wi-Fi, Bluetooth, USB data, microphones (voice control) and camera all fitted, plus optional wired Ethernet in a printed back plate; each **physically switched off by removing a jumper**; see [CARRIER.md](CARRIER.md), "Jumper block" |
 
 ## Screen size and layout
 
@@ -957,8 +959,8 @@ so DSI through the J44 extender is the least certain part.
 
 | Item | Spec |
 |---|---|
-| Raspberry Pi CM4 | With Wi-Fi, eMMC and 4 GB RAM (e.g. CM4104032) |
-| Raspberry Pi CM4 IO Board | Official carrier: proves the OS, panel overlay, touch and launcher before our own board exists |
+| Raspberry Pi CM4 and/or CM5 | With Wi-Fi, eMMC and 4 GB RAM (e.g. CM4104032) |
+| Official IO Board | Proves the OS, panel overlay, touch and launcher before our own board exists (the CM5 IO Board for both modules *(check)*) |
 | 12 V → 5 V buck module | At least 3 A, fixed 5 V or adjustable |
 | A spare 12 V supply or the original LA23UK adapter | 12 V, 1.25 A or more |
 
@@ -967,27 +969,28 @@ so DSI through the J44 extender is the least certain part.
 1. **Software on a stock Pi.** The launcher, the radar web app and its local data service, and Home
    Assistant in the second view, on any Pi 4 or the CM4 IO Board with an HDMI screen. None of this needs
    the Echo.
-2. **Bench prototype.** CM4 on its official IO Board, plus a small adapter PCB from its 22-pin DSI
+2. **Bench prototype.** The module on an official IO Board, plus a small adapter PCB from its 22-pin DSI
    connector: a J44-compatible 33-pin socket, 1.8 V and 2.8 V regulators, reset level shifting, a
    backlight boost LED driver with PWM dimming, and an 8-pin socket for the touch ribbon. DSI cannot go
    through jumper wires or a generic breakout: the pairs need short, length-matched, 100 Ω differential
    traces. Proves the panel overlay, touch and backlight.
 3. **Drop-in carrier board and a new IO board** (plan: [CARRIER.md](CARRIER.md)). A PCB with the KC19
-   board's outline and mounting holes, the CM4 on its two 100-pin board-to-board connectors, and **J44,
+   board's outline and mounting holes, a CM4 or CM5 on its two 100-pin board-to-board connectors, and **J44,
    J30, J100 and J45 in the same positions** so those original cables plug straight in. The new IO board
-   has USB-C PD (power and data) in the micro-USB slot and a 3.5 mm headset jack in the barrel-jack
-   opening, joined to the carrier by separate power/USB and audio cables. The carrier carries the 5 V
+   has USB-C PD (power and data) and a 3.5 mm headset jack, either in the original back plate's openings
+   or in a 3D-printed back plate that can also take an RJ45 Ethernet jack and vents. It joins the carrier
+   by separate power/USB, audio and Ethernet cables. The carrier carries the 5 V
    buck-boost, the panel supplies, the backlight driver, the speaker amplifier and a headphone DAC, the
    optional mic ADC and camera domains behind jumpers, a populated JST SH debug connector, and a heat path
-   to the speaker's copper plate. USB goes to the CM4 through a jumper-controlled switch, with an RPIBOOT
+   to the speaker's copper plate. USB goes to the module through a jumper-controlled switch, with an RPIBOOT
    jumper so the USB-C port can reflash the eMMC.
 
 ### Drop-in board checks
 - **Height:** the mainboard occupied 8.8 mm. Carrier, connector stack height (1.5 mm or 3 mm mated),
-  the CM4 and its tallest parts, plus any heat spreader, must fit. Choose the stack height from this.
-- **Wi-Fi antenna:** the Echo's antennas were printed on the mainboard's edge. Use the CM4's U.FL with an
+  the module and its tallest parts, plus any heat spreader, must fit. Choose the stack height from this.
+- **Wi-Fi antenna:** the Echo's antennas were printed on the mainboard's edge. Use the module's U.FL with an
   antenna at the case's top edge in the same place.
-- **Power budget:** CM4 at full load, backlight at full brightness, speaker and camera together: about
+- **Power budget:** CM4 (or CM5) at full load, backlight at full brightness, speaker and camera together: about
   11 W, a quarter of a 45 W USB-C PD supply.
 
 ## Open questions
@@ -1004,10 +1007,12 @@ so DSI through the J44 extender is the least certain part.
 - [ ] Backlight LED voltage, string count and current (from R335/R336 values).
 - [ ] J100 pinout (buttons, LEDs, privacy switch, microphones).
 - [ ] IO board outline, mounting, barrel-jack opening and micro-USB slot (for the new IO board).
+- [ ] Free space behind the rear wall (for USB-C, RJ45 and the 3.5 mm jack together), and the rear plate's
+  clips, bosses and speaker seal (for a printed back plate).
 - [ ] Microphones: mic ADC choice and its Linux driver (see CARRIER.md).
 - [ ] Camera (J45): sensor identity, Linux driver, pinout, socket position.
 - [ ] Internal cavity dimensions, for the drop-in carrier outline and heat spreader.
 - [ ] Speaker (8 Ω, Pico-SPOX 2-pin): choose the carrier's I²S amplifier (e.g. MAX98357A at 5 V).
-- [ ] Will the carrier, CM4 and connector stack fit within the 8.8 mm the mainboard occupied?
-- [ ] Antenna for the CM4's U.FL, and its place on the case's top edge.
+- [ ] Will the carrier, module and connector stack fit within the 8.8 mm the mainboard occupied?
+- [ ] Antenna for the module's U.FL, and its place on the case's top edge.
 - [ ] Power: measured total on the bench; USB-C opening in the case.

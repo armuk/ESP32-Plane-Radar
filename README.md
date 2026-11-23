@@ -15,7 +15,7 @@ Each board has its own folder, build and releases. **Flash only the files for yo
 | [`firmware/c3-supermini`](firmware/c3-supermini) | ESP32-C3 Super Mini + 1.28″ round GC9A01 (240×240) | **Released** | `v2.2.1`; files `plane-radar-v2.2.1-…`. These are the releases marked **Latest**. |
 | [`firmware/s3`](firmware/s3) | ESP32-S3 with PSRAM (board to be chosen) | Port in progress, not usable yet | Will be `s3-v0.1.0`; files `plane-radar-s3-v0.1.0-…` |
 | [`firmware/p4`](firmware/p4) | ESP32-P4 4″ round 720×720 touch (Waveshare ESP32-P4-WIFI6-Touch-LCD-4C) | Port in progress, not usable yet | Will be `p4-v0.1.0`; files `plane-radar-p4-v0.1.0-…` |
-| [`firmware/cm4`](firmware/cm4) | Raspberry Pi CM4 in an Echo Show 5 (2nd gen) case, 5.5″ 960×480 touch: radar plus Home Assistant dashboard | Hardware research, not usable yet | To be decided (not an ESP32 image) |
+| [`firmware/cm4`](firmware/cm4) | Raspberry Pi CM4 or CM5 in an Echo Show 5 (2nd gen) case, 5.5″ 960×480 touch: radar plus Home Assistant dashboard | Hardware research, not usable yet | To be decided (not an ESP32 image) |
 
 If you have a radar today, it is the **C3 Super Mini**: see its [README](firmware/c3-supermini/README.md) for wiring, setup, flashing and updates.
 

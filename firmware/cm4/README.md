@@ -1,7 +1,7 @@
-# Plane Radar: Raspberry Pi CM4 in an Echo Show 5 case (research)
+# Plane Radar: Raspberry Pi CM4 or CM5 in an Echo Show 5 case (research)
 
 Target: the case, 5.5" 960×480 screen, touch layer and glass of an **Amazon Echo Show 5 (2nd gen, 2021)**,
-with everything else replaced by a **Raspberry Pi Compute Module 4** on a drop-in carrier board of our own.
+with everything else replaced by a **Raspberry Pi Compute Module 4 or 5** on a drop-in carrier board of our own.
 One page shows the radar, the next the full Home Assistant dashboard, a swipe apart.
 
 Status: **hardware research and measurement.** No software or carrier board yet. Unlike the other boards,
@@ -13,7 +13,7 @@ as a local web app.
 | Path | What |
 |---|---|
 | [ECHO-SHOW-5.md](ECHO-SHOW-5.md) | Findings, measurements, the CM4 decision, the software stack, the build plan and open questions |
-| [CARRIER.md](CARRIER.md) | Plan for the CM4 carrier board: constraints, power, pin map, display, antenna, heat, stages and open decisions |
+| [CARRIER.md](CARRIER.md) | Plan for the CM4/CM5 carrier board and the new IO board: constraints, power, pin map, display, antenna, heat, stages and open decisions |
 | [echo-breakout/](echo-breakout/README.md) | Drop-in breakout board (KiCad 10, JLCPCB): maps the Echo's connectors and runs the touch ribbon, buttons and LEDs from an ESP32-C3 SuperMini |
 | [ribbon-extenders/](ribbon-extenders/README.md) | Flex cables that lengthen the Echo's ribbons so the breakout can sit on the bench |
 | `parts-documentation/` | Datasheets and 3D models for the connectors and sockets |
