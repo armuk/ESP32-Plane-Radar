@@ -11,7 +11,7 @@ pio test -e native            # host unit tests
 pio check -e p4               # cppcheck
 ```
 
-The Echo Show 5 (2nd gen) enclosure build, researched in this folder, is no longer a P4 target: it moves to a Raspberry Pi CM4 on its own carrier board, to show the full Home Assistant dashboard beside the radar. Findings, the decision and the plan: [ECHO-SHOW-5.md](ECHO-SHOW-5.md).
+The Echo Show 5 (2nd gen) enclosure build started here as a second P4 target. It is now a Raspberry Pi CM4 build in its own folder: [firmware/cm4](../cm4/README.md).
 
 ## Porting checklist
 
