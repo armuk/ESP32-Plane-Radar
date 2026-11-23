@@ -463,12 +463,12 @@ board's edge next to C9211. Molex's 87438-0243 header takes the original lead un
 | Item | Value |
 |---|---|
 | Adapter | 15 W, model **LA23UK**: input 100–240 V~ 0.5 A 50/60 Hz, output **12.0 V 1.25 A** |
-| IO board | **KC19 IO BD Ver 2.0**, PN `01042HD00-42T-G` (as printed on the board), `SH9 94V-0 E248779`, date or lot `2210-001`. Carries the DC jack and USB (details below) |
+| IO board | **KC19 IO BD Ver 2.0**, PN `01042HD00-42T-G` (as printed on the board), `SH9 94V-0 E248779`, date or lot `2210-001` (the 2026-11-23 photo reads `2135-001`: recheck under the microscope). Carries the DC jack and USB (details below) |
 | IO cable | **KC19 IO-MLB Version 2.1**, `E495366`, `0722 L 94V-0`, data matrix `CH2LKG0IOM207303YQ`. Plugs into J46 (31 pins) |
 | Inner case | QR code `KC19HTL03TLF22052721878` |
 
 For the CM4 build this board and its adapter are replaced: USB-C PD in the micro-USB slot, and a 3.5 mm
-headset jack in the barrel-jack opening (see [CARRIER.md](CARRIER.md), "Input: a new IO board with USB-C").
+headset jack in the barrel-jack opening (see [CARRIER.md](CARRIER.md), "IO board and back plate").
 Its outline, mounting and the two openings are what the new IO board must match.
 
 ### The IO board in detail
@@ -481,16 +481,45 @@ Its outline, mounting and the two openings are what the new IO board must match.
 | **J4** | 31-pin FPC connector, pins 1–31 marked | Cable to the mainboard's **J46** |
 | **D305** | SMA diode marked `15A 2147` | Probably an **SMAJ15A TVS diode** (15 V stand-off) clamping surges on the 12 V input *(unconfirmed)*; 2147 is likely a date code (2021, week 47) |
 | FB2, C1708, C1709, C9174, C9175 | Ferrite bead and capacitors | Filtering on the 12 V input |
-| White outline with `+` and two pads (top right, by C9174) | Polarised capacitor footprint | Possibly an unpopulated bulk capacitor *(unconfirmed)* |
+| White outline with `+` and two pads (by C9174 and C1709, next to FB2) | Polarised capacitor footprint | Possibly an unpopulated bulk capacitor *(unconfirmed)* |
 | L13 | Small two-winding part | Probably a common-mode choke on USB D+/D− *(unconfirmed)* |
 | FB1 | Ferrite bead | Probably on USB VBUS *(unconfirmed)* |
-| D13, D14, D15, D17, D306 | Small diodes | Probably ESD protection on the USB and power lines *(unconfirmed)* |
+| D12, D13, D14, D15, D19, D306 | Small diodes | Probably ESD protection on the USB and power lines *(unconfirmed)* |
+| Q17 | Small transistor, by R234/R235 | Read as D17 earlier; the 2026-11-23 photo shows `Q17`. Probably USB VBUS or ID detection *(unconfirmed)* |
 | R231, R234, R235, R236, R239–R241; C12, C19, C203, C354 | Resistors and capacitors | Support parts for the above |
 | TP16, TP17 | Test points | Near J4, on the back |
 | CLIP2 and the second metal tab | Grounding clips to the chassis screws | |
 
-The CM4 build doesn't reuse this board (see above). Measure its outline, mounting holes, the positions and
-sizes of the barrel-jack opening and micro-USB slot, and the path its ribbon takes, for the new IO board.
+#### Layout from photos (2026-11-23)
+
+Front and back photos, ports along the top edge in the front view. **Estimated** from the photos at about
+25 px/mm (two known sizes agree: the micro-USB shell, 7.5 mm wide, and J4's contact span, 9.0 mm), so
+expect ±1–1.5 mm; confirm with calipers. Positions from the left end in the front view, x along the port
+edge, y in from it.
+
+| Item | x (mm) | y (mm) | Notes |
+|---|---|---|---|
+| Board | 0–53 | 0–18 | About **53 × 18 mm**. A notch in the port edge at x 32–34.5 (a locating feature) |
+| CLIP1 + mounting hole | 0.7–6 | hole at about 2.5 | Spring grounding clip; the round pad under kapton is a mounting hole |
+| **J3** barrel jack | 6.7–21 (centre 14) | 0–9 | Faces the port edge; its body sits slightly past the edge (visible from the back) |
+| **J2** micro-USB | 23–31.5 (centre 27) | 0–6 | Mid-mount, slightly past the edge |
+| **J1** footprint (3.5 mm jack) | 35–45 | 0–10 | Its nose would sit at about x 38–40 on the port edge |
+| CLIP2 + mounting hole | 47–52 | hole at about 15.5 | Second clip; the two mounting holes are diagonally opposite |
+| J4 (back) | 21–32 | about 2–5 | 31-pin FPC, pin 31 at the left, pin 1 at the right (back view); opening faces the far edge |
+| Bare copper | — | — | Gold strips along both long edges (front and back) and a bare patch at the bottom right (front): ground contact to the shield or frame |
+
+**Port edge budget:** between the two clips there's about **40 mm** of edge (x 6.5–46.5). For the printed
+back plate (option B in CARRIER.md): USB-C (about 9 mm) + RJ45 (16 mm) + 3.5 mm jack (about 6–7 mm) +
+gaps comes to about 35 mm, so all three fit along the edge **on paper**, if the clips stay where they are.
+What the photos can't show:
+- **Height:** an RJ45 stands about 13.5 mm above its board (about 10 mm for a low-profile one). The space
+  above and below this board in the case is unmeasured; J3's height above the board is a known-safe minimum.
+- **Depth:** an RJ45 is about 16–21 mm deep, and this board is only about 18 mm from the port edge, so it
+  needs a short-body jack, a deeper board, or an overhang, depending on what sits behind the board.
+- **Orientation:** how the board sits relative to the rear wall, speaker and frame.
+
+For the new IO board: confirm the outline, notch, mounting holes and port positions with calipers, measure
+J3's height above the board, and measure the free space around the board inside the closed case.
 
 ### J4 / J46 pinout (31 pins) — reference only
 
