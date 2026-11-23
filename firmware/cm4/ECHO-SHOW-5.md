@@ -29,8 +29,9 @@ Three routes were considered:
 still useful on a bench unit (kept off the home network) to identify the panel variant and measure voltages.
 
 ### Why the CM4 and not the CM5
-- **Power:** the original adapter gives 12 V at 1.25 A (15 W, see "Power and IO board"). A CM4 under load
-  plus the backlight fits; a CM5 can draw 10 W or more on its own.
+- **Power:** the carrier is powered over USB-C PD (up to 45 W; see [CARRIER.md](CARRIER.md)), so power no
+  longer limits the choice. A CM4 under load draws about 7 W; a CM5 can draw 10 W or more on its own, and
+  all of it becomes heat.
 - **Heat:** the case is sealed with no fan. A CM4's few watts are close to what the Echo's MT8163 gave off
   in the same case; a spreader to the metal frame should do. A CM5 would need more.
 - **DSI:** the panel needs 2 lanes; the CM4's DSI1 port has 4, so either port works.
@@ -53,6 +54,7 @@ Kept small, auditable and patchable:
 | Network | Firewall denying all inbound connections; no SSH by default (key-only, behind a switch, when needed); nothing listening off loopback |
 | Buttons and LEDs | J100's buttons as range, brightness and screen-off through `gpio-keys`; LEDs for stale data or Wi-Fi down |
 | Sound | I²S amplifier on the carrier to the original speaker (J2), for alerts and Home Assistant media |
+| Optional hardware | Bluetooth, USB data, microphones (voice control) and camera all fitted, each **physically switched off by removing a jumper**; see [CARRIER.md](CARRIER.md), "Jumper block" |
 
 ## Screen size and layout
 
@@ -276,9 +278,9 @@ power-management chip, the one whose rails would hint at the screen and touch vo
 |---|---|---|---|
 | **J44** | 33 | Display panel (pin 1 towards the top of the case, 33 at the bottom) | Yes |
 | **J30** | 8 | Touch layer (GT911) | Yes |
-| **J46** | 31 | IO board: DC jack and USB | Yes: the jack and port line up with the case |
-| **J100** | 23 | Top board: buttons and their LEDs, the two microphones, privacy cover switch and detector | Buttons, LEDs and switch yes; microphone pins left unconnected (see Microphones) |
-| **J45** | 25 | Camera | No |
+| **J46** | 31 | IO board: DC jack and USB | No: a new IO board (USB-C, 3.5 mm jack) with two new cables replaces the IO board and this ribbon |
+| **J100** | 23 | Top board: buttons and their LEDs, the two microphones, privacy cover switch and detector | Yes: buttons, LEDs and switch; microphones to the carrier's mic ADC behind the MIC jumper (see Microphones) |
+| **J45** | 25 | Camera | Optional, behind the CAM jumper (sensor and Linux driver to identify) |
 | J2 | 2 | **Speaker** (confirmed: a plain two-wire connection) | Optional (see Speaker) |
 
 ### Backlight boost circuit (next to J44)
@@ -408,20 +410,16 @@ over SPI to the SoC; that is gone too.)
 | Connector | its own **J44** (board-local name, not the mainboard's display J44), pin 1 marked; cable to the mainboard's **J100** (23 pins) |
 | Privacy switch | **SW4** on the flexible tail at the left end, with a small metal-can part next to it (near TP45 / C904 / D11), probably the camera-cover slide switch and its detector *(unconfirmed)* |
 
-To make the microphones physically gone as well as electrically dead: remove **MK1** and **MK2** with hot
-air. Nothing else on the board depends on them. The buttons, LEDs and switch keep working.
+**On the carrier, the microphones are optional and physically switchable** (see [CARRIER.md](CARRIER.md),
+"Audio"): J100's mic pins go to a mic ADC (the same TLV320ADC3101 is the low-risk choice) in its own power
+domain. Removing the **MIC** jumper unpowers the ADC and with it the mic bias, so the microphones are dead in
+hardware, whatever software does. One top-board LED can show the domain's real state.
 
-Options, in order of preference:
-
-1. **Leave their J100 pins unconnected** on the adapter and the drop-in board (or tie them to ground
-   through a resistor). With the old mainboard gone, nothing biases or digitises them, so they are
-   electrically dead. No firmware setting can change that.
-2. **Also remove them from the top board** (small MEMS parts, removable with hot air) or cut their
-   traces, if you want them physically gone. This leaves the buttons, LEDs and switch working.
+For a unit that should never have microphones at all:
+1. **Leave the MIC jumper out.** Nothing biases or digitises the microphones.
+2. **Also remove MK1 and MK2** from the top board with hot air, if you want them physically gone. Nothing
+   else on the board depends on them; the buttons, LEDs and switch keep working.
 3. Covering the case's sound holes adds nothing once they are dead electrically.
-
-Also make sure the carrier adds no microphone: no mic input, codec or ADC, and never route J100's mic
-pins anywhere on it.
 
 Repurposing the rest of the top board:
 - **Mic-mute button** (Linux `gpio-404` on the Echo) and **volume buttons** (`gpio-393`, `gpio-394`):
@@ -467,7 +465,9 @@ board's edge next to C9211. Molex's 87438-0243 header takes the original lead un
 | IO cable | **KC19 IO-MLB Version 2.1**, `E495366`, `0722 L 94V-0`, data matrix `CH2LKG0IOM207303YQ`. Plugs into J46 (31 pins) |
 | Inner case | QR code `KC19HTL03TLF22052721878` |
 
-For the CM4: a buck converter from 12 V to 5 V (3 A or more) for the board; the backlight boost can run from 5 V or 12 V.
+For the CM4 build this board and its adapter are replaced: USB-C PD in the micro-USB slot, and a 3.5 mm
+headset jack in the barrel-jack opening (see [CARRIER.md](CARRIER.md), "Input: a new IO board with USB-C").
+Its outline, mounting and the two openings are what the new IO board must match.
 
 ### The IO board in detail
 
@@ -475,7 +475,7 @@ For the CM4: a buck converter from 12 V to 5 V (3 A or more) for the board; the 
 |---|---|---|
 | **J3** | DC barrel jack (12 V in) | Metal shell marked `125` |
 | **J2** | **Micro-USB** socket, mid-mount (confirmed) | The Echo's service port. Keep it for reflashing the CM4's eMMC (`rpiboot`) |
-| **J1** | **Unpopulated** footprint: two locating holes, slotted pads, a jack-shaped outline | Almost certainly a **3.5 mm audio jack** left off this model. **The case has no hole for it:** there's a faint guide mark where it would be, but the plastic is solid (the mould was changed). Not used |
+| **J1** | **Unpopulated** footprint: two locating holes, slotted pads, a jack-shaped outline | Almost certainly a **3.5 mm audio jack** left off this model. **The case has no hole for it:** there's a faint guide mark where it would be, but the plastic is solid (the mould was changed). The CM4 build puts its 3.5 mm jack in the barrel-jack opening instead; this mark is the fallback position |
 | **J4** | 31-pin FPC connector, pins 1–31 marked | Cable to the mainboard's **J46** |
 | **D305** | SMA diode marked `15A 2147` | Probably an **SMAJ15A TVS diode** (15 V stand-off) clamping surges on the 12 V input *(unconfirmed)*; 2147 is likely a date code (2021, week 47) |
 | FB2, C1708, C1709, C9174, C9175 | Ferrite bead and capacitors | Filtering on the 12 V input |
@@ -487,15 +487,12 @@ For the CM4: a buck converter from 12 V to 5 V (3 A or more) for the board; the 
 | TP16, TP17 | Test points | Near J4, on the back |
 | CLIP2 and the second metal tab | Grounding clips to the chassis screws | |
 
-Reusing this board as is keeps the DC jack and USB port lined up with the case. On the carrier:
-- 12 V from J4 goes to the 5 V buck (and the backlight boost); the board's TVS and filtering stay in place.
-- USB D+/D− go to the CM4's USB 2.0 port, so the rear port can reflash the eMMC (`rpiboot`, with
-  `nRPIBOOT` pulled low) and act as a service port. Keep the pair matched; check it at high speed over this cable.
-- Don't connect USB VBUS straight to the 5 V rail: when the 12 V adapter and a computer are both plugged
-  in, the two supplies would fight. Use it only through a diode or ideal-diode OR, or just to sense that
-  USB is present.
+The CM4 build doesn't reuse this board (see above). Measure its outline, mounting holes, the positions and
+sizes of the barrel-jack opening and micro-USB slot, and the path its ribbon takes, for the new IO board.
 
-### J4 / J46 pinout (31 pins) — to measure
+### J4 / J46 pinout (31 pins) — reference only
+
+No longer needed for the carrier (the IO board and this ribbon are replaced); kept for the record.
 
 Easy to map on the IO board alone, power off, continuity mode. Expect several pins in parallel for 12 V
 and for ground (to share current). 31 pins is more than power and USB need, so the rest may be the
@@ -524,7 +521,7 @@ Pitch = centre-to-centre distance from the first contact to the last ÷ (pins �
 | IO board cable (J46) | 31 | 9.0 | 9.5 | 0.2 | Towards the board | **0.3 mm** (9.0 ÷ 30) |
 | Top board cable (J100) | 23 | 6.5 | 7.25 | 0.2 | Towards the board | **0.3 mm** (6.5 ÷ 22 ≈ 0.295) |
 | Touch (J30) | 8 | 3.5 | | 0.3 | Towards the board | **0.5 mm** (3.5 ÷ 7). A first reading of 4.5 mm had included the wide ground tabs at each end |
-| Camera (J45, not reused) | 25 | | | | | |
+| Camera (J45, optional) | 25 | | | | | |
 
 Expected centre-to-centre spans:
 
@@ -975,20 +972,23 @@ so DSI through the J44 extender is the least certain part.
    backlight boost LED driver with PWM dimming, and an 8-pin socket for the touch ribbon. DSI cannot go
    through jumper wires or a generic breakout: the pairs need short, length-matched, 100 Ω differential
    traces. Proves the panel overlay, touch and backlight.
-3. **Drop-in carrier board.** A PCB with the KC19 board's outline and mounting holes, the CM4 on its two
-   100-pin board-to-board connectors, and **J44, J30, J46 and J100 in the same positions** so every
-   original cable plugs straight in. It also carries the 12 V → 5 V buck (3 A or more), the panel
-   supplies, the backlight boost, an I²S amplifier for the speaker, and a heat spreader path to the
-   metal frame. USB from J46 goes to the CM4's USB 2.0 port, with a way to pull `nRPIBOOT` low (button or
-   jumper) so the rear port can reflash the eMMC.
+3. **Drop-in carrier board and a new IO board** (plan: [CARRIER.md](CARRIER.md)). A PCB with the KC19
+   board's outline and mounting holes, the CM4 on its two 100-pin board-to-board connectors, and **J44,
+   J30, J100 and J45 in the same positions** so those original cables plug straight in. The new IO board
+   has USB-C PD (power and data) in the micro-USB slot and a 3.5 mm headset jack in the barrel-jack
+   opening, joined to the carrier by separate power/USB and audio cables. The carrier carries the 5 V
+   buck-boost, the panel supplies, the backlight driver, the speaker amplifier and a headphone DAC, the
+   optional mic ADC and camera domains behind jumpers, a populated JST SH debug connector, and a heat path
+   to the speaker's copper plate. USB goes to the CM4 through a jumper-controlled switch, with an RPIBOOT
+   jumper so the USB-C port can reflash the eMMC.
 
 ### Drop-in board checks
 - **Height:** the mainboard occupied 8.8 mm. Carrier, connector stack height (1.5 mm or 3 mm mated),
   the CM4 and its tallest parts, plus any heat spreader, must fit. Choose the stack height from this.
-- **Wi-Fi antenna:** the CM4's PCB antenna sits inside a plastic case but near the metal display frame;
-  check signal, or route its U.FL to an antenna where the Echo's Wi-Fi antennas were.
-- **Power budget:** CM4 at full load, backlight at full brightness and the speaker together must stay
-  within the adapter's 15 W.
+- **Wi-Fi antenna:** the Echo's antennas were printed on the mainboard's edge. Use the CM4's U.FL with an
+  antenna at the case's top edge in the same place.
+- **Power budget:** CM4 at full load, backlight at full brightness, speaker and camera together: about
+  11 W, a quarter of a 45 W USB-C PD supply.
 
 ## Open questions
 
@@ -1002,10 +1002,12 @@ so DSI through the J44 extender is the least certain part.
   the frame**; the ID read is the way to confirm it. A resistor on the J44 panel-ID pin (see "Variant select")
   is a second check once J44 is mapped.
 - [ ] Backlight LED voltage, string count and current (from R335/R336 values).
-- [ ] J4/J46 pinout (power, USB, J1) and J100 pinout (buttons, LEDs, privacy switch, microphones).
-- [ ] Microphones (analog, per TECHO5): decide whether to also remove MK1 and MK2 from the top board.
+- [ ] J100 pinout (buttons, LEDs, privacy switch, microphones).
+- [ ] IO board outline, mounting, barrel-jack opening and micro-USB slot (for the new IO board).
+- [ ] Microphones: mic ADC choice and its Linux driver (see CARRIER.md).
+- [ ] Camera (J45): sensor identity, Linux driver, pinout, socket position.
 - [ ] Internal cavity dimensions, for the drop-in carrier outline and heat spreader.
 - [ ] Speaker (8 Ω, Pico-SPOX 2-pin): choose the carrier's I²S amplifier (e.g. MAX98357A at 5 V).
 - [ ] Will the carrier, CM4 and connector stack fit within the 8.8 mm the mainboard occupied?
-- [ ] CM4 Wi-Fi inside the case: PCB antenna or U.FL to an external antenna?
-- [ ] Power: CM4 full load + full backlight + speaker within 15 W?
+- [ ] Antenna for the CM4's U.FL, and its place on the case's top edge.
+- [ ] Power: measured total on the bench; USB-C opening in the case.

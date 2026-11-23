@@ -13,6 +13,7 @@ as a local web app.
 | Path | What |
 |---|---|
 | [ECHO-SHOW-5.md](ECHO-SHOW-5.md) | Findings, measurements, the CM4 decision, the software stack, the build plan and open questions |
+| [CARRIER.md](CARRIER.md) | Plan for the CM4 carrier board: constraints, power, pin map, display, antenna, heat, stages and open decisions |
 | [echo-breakout/](echo-breakout/README.md) | Drop-in breakout board (KiCad 10, JLCPCB): maps the Echo's connectors and runs the touch ribbon, buttons and LEDs from an ESP32-C3 SuperMini |
 | [ribbon-extenders/](ribbon-extenders/README.md) | Flex cables that lengthen the Echo's ribbons so the breakout can sit on the bench |
 | `parts-documentation/` | Datasheets and 3D models for the connectors and sockets |
